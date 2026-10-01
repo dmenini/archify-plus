@@ -13879,13 +13879,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 
     Archify.configView = (function () {
-      var JS_KEYWORDS = { &#39;true&#39;: true, &#39;false&#39;: true, &#39;null&#39;: true, &#39;undefined&#39;: true };
+      var JS_KEYWORDS = Object.create(null);
+      JS_KEYWORDS[&#39;true&#39;] = true;
+      JS_KEYWORDS[&#39;false&#39;] = true;
+      JS_KEYWORDS[&#39;null&#39;] = true;
+      JS_KEYWORDS[&#39;undefined&#39;] = true;
       var STRING_LITERAL_RE = /&#39;[^&#39;]*&#39;|&quot;[^&quot;]*&quot;/g;
 
       function extractIdentifiers(expr) {
         var withoutStringLiterals = expr.replace(STRING_LITERAL_RE, &#39; &#39;);
         var matches = withoutStringLiterals.match(/[A-Za-z_$][A-Za-z0-9_$]*/g) || [];
-        var seen = {};
+        var seen = Object.create(null);
         var result = [];
         for (var i = 0; i &lt; matches.length; i += 1) {
           var m = matches[i];
@@ -13908,7 +13912,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
 
       function evaluateSpec(spec, fieldValues) {
-        var declaredIds = {};
+        var declaredIds = Object.create(null);
         var i;
         for (i = 0; i &lt; spec.fields.length; i += 1) declaredIds[spec.fields[i].id] = true;
         var derived = spec.derived || [];
@@ -13921,11 +13925,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           state[derived[i].id] = !!fn(state);
         }
 
-        var hiddenNodes = {};
-        var attnNodes = {};
-        var hiddenEdges = {};
-        var attnEdges = {};
-        var setText = {};
+        var hiddenNodes = Object.create(null);
+        var attnNodes = Object.create(null);
+        var hiddenEdges = Object.create(null);
+        var attnEdges = Object.create(null);
+        var setText = Object.create(null);
         var hiddenNodesList = [];
         var attnNodesList = [];
         var hiddenEdgesList = [];
@@ -14049,7 +14053,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
       function collectAllNodeIds() {
         var ids = [];
-        var seen = {};
+        var seen = Object.create(null);
         var els = document.querySelectorAll(&#39;[data-node-id]&#39;);
         for (var i = 0; i &lt; els.length; i += 1) {
           var id = els[i].getAttribute(&#39;data-node-id&#39;);
@@ -14059,7 +14063,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function collectAllEdgeKeys() {
         var keys = [];
-        var seen = {};
+        var seen = Object.create(null);
         var els = document.querySelectorAll(&#39;[data-edge-from][data-edge-to]&#39;);
         for (var i = 0; i &lt; els.length; i += 1) {
           var key = els[i].getAttribute(&#39;data-edge-from&#39;) + &#39;&gt;&#39; + els[i].getAttribute(&#39;data-edge-to&#39;);
@@ -28225,13 +28229,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 
     Archify.configView = (function () {
-      var JS_KEYWORDS = { &#39;true&#39;: true, &#39;false&#39;: true, &#39;null&#39;: true, &#39;undefined&#39;: true };
+      var JS_KEYWORDS = Object.create(null);
+      JS_KEYWORDS[&#39;true&#39;] = true;
+      JS_KEYWORDS[&#39;false&#39;] = true;
+      JS_KEYWORDS[&#39;null&#39;] = true;
+      JS_KEYWORDS[&#39;undefined&#39;] = true;
       var STRING_LITERAL_RE = /&#39;[^&#39;]*&#39;|&quot;[^&quot;]*&quot;/g;
 
       function extractIdentifiers(expr) {
         var withoutStringLiterals = expr.replace(STRING_LITERAL_RE, &#39; &#39;);
         var matches = withoutStringLiterals.match(/[A-Za-z_$][A-Za-z0-9_$]*/g) || [];
-        var seen = {};
+        var seen = Object.create(null);
         var result = [];
         for (var i = 0; i &lt; matches.length; i += 1) {
           var m = matches[i];
@@ -28254,7 +28262,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
 
       function evaluateSpec(spec, fieldValues) {
-        var declaredIds = {};
+        var declaredIds = Object.create(null);
         var i;
         for (i = 0; i &lt; spec.fields.length; i += 1) declaredIds[spec.fields[i].id] = true;
         var derived = spec.derived || [];
@@ -28267,11 +28275,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           state[derived[i].id] = !!fn(state);
         }
 
-        var hiddenNodes = {};
-        var attnNodes = {};
-        var hiddenEdges = {};
-        var attnEdges = {};
-        var setText = {};
+        var hiddenNodes = Object.create(null);
+        var attnNodes = Object.create(null);
+        var hiddenEdges = Object.create(null);
+        var attnEdges = Object.create(null);
+        var setText = Object.create(null);
         var hiddenNodesList = [];
         var attnNodesList = [];
         var hiddenEdgesList = [];
@@ -28395,7 +28403,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
       function collectAllNodeIds() {
         var ids = [];
-        var seen = {};
+        var seen = Object.create(null);
         var els = document.querySelectorAll(&#39;[data-node-id]&#39;);
         for (var i = 0; i &lt; els.length; i += 1) {
           var id = els[i].getAttribute(&#39;data-node-id&#39;);
@@ -28405,7 +28413,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function collectAllEdgeKeys() {
         var keys = [];
-        var seen = {};
+        var seen = Object.create(null);
         var els = document.querySelectorAll(&#39;[data-edge-from][data-edge-to]&#39;);
         for (var i = 0; i &lt; els.length; i += 1) {
           var key = els[i].getAttribute(&#39;data-edge-from&#39;) + &#39;&gt;&#39; + els[i].getAttribute(&#39;data-edge-to&#39;);

@@ -1,11 +1,15 @@
     Archify.configView = (function () {
-      var JS_KEYWORDS = { 'true': true, 'false': true, 'null': true, 'undefined': true };
+      var JS_KEYWORDS = Object.create(null);
+      JS_KEYWORDS['true'] = true;
+      JS_KEYWORDS['false'] = true;
+      JS_KEYWORDS['null'] = true;
+      JS_KEYWORDS['undefined'] = true;
       var STRING_LITERAL_RE = /'[^']*'|"[^"]*"/g;
 
       function extractIdentifiers(expr) {
         var withoutStringLiterals = expr.replace(STRING_LITERAL_RE, ' ');
         var matches = withoutStringLiterals.match(/[A-Za-z_$][A-Za-z0-9_$]*/g) || [];
-        var seen = {};
+        var seen = Object.create(null);
         var result = [];
         for (var i = 0; i < matches.length; i += 1) {
           var m = matches[i];
@@ -28,7 +32,7 @@
       }
 
       function evaluateSpec(spec, fieldValues) {
-        var declaredIds = {};
+        var declaredIds = Object.create(null);
         var i;
         for (i = 0; i < spec.fields.length; i += 1) declaredIds[spec.fields[i].id] = true;
         var derived = spec.derived || [];
@@ -41,11 +45,11 @@
           state[derived[i].id] = !!fn(state);
         }
 
-        var hiddenNodes = {};
-        var attnNodes = {};
-        var hiddenEdges = {};
-        var attnEdges = {};
-        var setText = {};
+        var hiddenNodes = Object.create(null);
+        var attnNodes = Object.create(null);
+        var hiddenEdges = Object.create(null);
+        var attnEdges = Object.create(null);
+        var setText = Object.create(null);
         var hiddenNodesList = [];
         var attnNodesList = [];
         var hiddenEdgesList = [];
@@ -169,7 +173,7 @@
 
       function collectAllNodeIds() {
         var ids = [];
-        var seen = {};
+        var seen = Object.create(null);
         var els = document.querySelectorAll('[data-node-id]');
         for (var i = 0; i < els.length; i += 1) {
           var id = els[i].getAttribute('data-node-id');
@@ -179,7 +183,7 @@
       }
       function collectAllEdgeKeys() {
         var keys = [];
-        var seen = {};
+        var seen = Object.create(null);
         var els = document.querySelectorAll('[data-edge-from][data-edge-to]');
         for (var i = 0; i < els.length; i += 1) {
           var key = els[i].getAttribute('data-edge-from') + '>' + els[i].getAttribute('data-edge-to');
