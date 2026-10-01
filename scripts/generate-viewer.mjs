@@ -22,6 +22,7 @@ const fragments = [
   ['/* ARCHIFY:NODE_FINDER */', 'node-finder.js'],
   ['/* ARCHIFY:NODE_OUTLINE */', 'node-outline.js'],
   ['/* ARCHIFY:FOCUS */', 'focus.js'],
+  ['/* ARCHIFY:CONFIG_VIEW */', 'config-view.js'],
   ['/* ARCHIFY:INTENT_TRACE */', 'intent-trace.js'],
   ['/* ARCHIFY:SEMANTIC_LENS */', 'semantic-lens.js'],
   ['/* ARCHIFY:ROUTE_PROBE */', 'route-probe.js'],

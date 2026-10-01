@@ -12,6 +12,7 @@ import { translateMessage as i18nText } from '../shared/i18n.mjs';
 import { gridLayout, resolveComponentPos, validateGridPlacement } from './grid.mjs';
 import { createRouter } from './routing.mjs';
 import { placeAutomaticLabels, reservedLabelRect } from './labels.mjs';
+import { validateConfigView } from './config-view.mjs';
 import { cleanRouteDetourProblems } from '../shared/route-quality.mjs';
 import {
   asArray,
@@ -989,6 +990,11 @@ if (layoutJsonMode) {
   if (!process.exitCode) console.log(JSON.stringify(buildLayoutReport(), null, 2));
 } else {
   validateArchitecture();
+  if (arch.meta.configView) {
+    const realNodeIds = new Set(arch.components.map((c) => c.id));
+    const realEdgeKeys = new Set(arch.connections.map((c) => `${c.from}>${c.to}`));
+    validateConfigView(arch.meta.configView, realNodeIds, realEdgeKeys);
+  }
   writeDiagram({
     outPath,
     template,
@@ -997,5 +1003,6 @@ if (layoutJsonMode) {
     svg: renderSvg(),
     cards: arch.cards,
     sourceEvidence,
+    configView: arch.meta.configView || null,
   });
 }

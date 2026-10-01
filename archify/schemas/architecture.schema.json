@@ -24,6 +24,7 @@
         "engineering_profile": { "enum": ["deployment-ownership"] },
         "repository": { "$ref": "common.schema.json#/$defs/repository" },
         "views": { "$ref": "common.schema.json#/$defs/guidedViews" },
+        "configView": { "$ref": "common.schema.json#/$defs/configView" },
         "legend": {
           "type": "object",
           "additionalProperties": false,
