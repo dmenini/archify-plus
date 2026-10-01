@@ -4881,15 +4881,105 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     }
     [data-edge-from][data-config-attn] { stroke: var(--security-stroke) !important; }
 
-    .config-view-panel { position: fixed; top: 12px; left: 12px; z-index: 40; }
-    .config-view-toggle { cursor: pointer; }
-    .config-view-body { position: absolute; top: 100%; left: 0; margin-top: 4px; }
-    .config-view-warnings { list-style: none; margin: 8px 0 0; padding: 0; }
-    .config-view-warnings li { display: block; margin: 4px 0; }
+    .config-view-panel { position: fixed; top: 1rem; left: 1rem; z-index: 40; }
+    .config-view-toggle {
+      position: relative;
+      z-index: 41;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.75rem;
+      border: 1px solid var(--toolbar-border);
+      border-radius: 0.5rem;
+      background: var(--toolbar-menu-bg);
+      color: var(--toolbar-text);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+    .config-view-toggle:hover,
+    .config-view-toggle:focus-visible { background: var(--toolbar-hover); }
+
+    .config-view-body {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: min(22rem, 90vw);
+      overflow-y: auto;
+      z-index: 39;
+      border-right: 1px solid var(--toolbar-border);
+      background: var(--toolbar-menu-bg);
+      color: var(--toolbar-text);
+      box-shadow: 18px 0 48px rgba(0, 0, 0, 0.3);
+      padding: 4.5rem 1.1rem 1.5rem;
+      font-size: 0.75rem;
+    }
+    .config-view-body[hidden] { display: none; }
+
+    /* Unlike every other interactive mode's floating chip, configView's drawer
+       pushes the page content aside instead of overlaying it, since its fields
+       are meant to be read alongside the diagram, not just glanced at briefly. */
+    body { transition: margin-left 0.25s ease; }
+    body[data-config-view-open="true"] { margin-left: min(22rem, 90vw); }
+
+    .config-view-fields { display: flex; flex-direction: column; gap: 0.65rem; }
+    .config-view-section-title {
+      margin: 1.1rem 0 0.3rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 1px solid var(--toolbar-border);
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-faint);
+    }
+    .config-view-fields > .config-view-section-title:first-child { margin-top: 0; }
+    .config-view-field { display: flex; flex-direction: column; gap: 0.25rem; }
+    .config-view-field label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+    .config-view-field:has(select) label { flex-direction: column; align-items: flex-start; }
+    .config-view-field select {
+      width: 100%;
+      background: var(--toolbar-menu-bg);
+      color: var(--toolbar-text);
+      border: 1px solid var(--toolbar-border);
+      border-radius: 0.35rem;
+      padding: 0.3rem 0.4rem;
+      font-size: 0.72rem;
+    }
+
+    .config-view-warnings {
+      list-style: none;
+      margin: 1.2rem 0 0;
+      padding: 0.75rem 0 0;
+      border-top: 1px solid var(--toolbar-border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .config-view-warnings li {
+      display: block;
+      padding: 0.4rem 0.55rem;
+      border-left: 3px solid var(--text-faint);
+      border-radius: 0.25rem;
+      background: color-mix(in srgb, var(--text-faint) 10%, transparent);
+      line-height: 1.45;
+    }
+    .config-view-warnings li.danger { border-left-color: var(--security-stroke); background: color-mix(in srgb, var(--security-stroke) 14%, transparent); }
+    .config-view-warnings li.warn { border-left-color: #d97706; background: color-mix(in srgb, #d97706 14%, transparent); }
+    .config-view-warnings li.info { border-left-color: #2563eb; background: color-mix(in srgb, #2563eb 12%, transparent); }
     .config-view-tag {
       text-transform: uppercase;
       font-weight: 700;
       margin-right: 4px;
+      font-size: 0.65rem;
+    }
+    .config-view-doc {
+      display: block;
+      margin-top: 0.2rem;
+      color: var(--text-faint);
+      font-size: 0.65rem;
     }
   </style>
 </head>
@@ -9498,14 +9588,25 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         }
       }
 
+      var lastSection = null;
       for (var i = 0; i < SPEC.fields.length; i += 1) {
-        fieldsContainer.appendChild(renderFieldControl(SPEC.fields[i]));
+        var field = SPEC.fields[i];
+        if (field.section && field.section !== lastSection) {
+          var sectionTitle = document.createElement('div');
+          sectionTitle.className = 'config-view-section-title';
+          sectionTitle.textContent = field.section;
+          fieldsContainer.appendChild(sectionTitle);
+        }
+        lastSection = field.section || null;
+        fieldsContainer.appendChild(renderFieldControl(field));
       }
+      toggle.textContent = 'Configuration';
       fieldsContainer.addEventListener('change', render);
       toggle.addEventListener('click', function () {
         var expanded = toggle.getAttribute('aria-expanded') === 'true';
         toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
         body.hidden = expanded;
+        document.body.setAttribute('data-config-view-open', expanded ? 'false' : 'true');
       });
       panel.hidden = false;
       render();

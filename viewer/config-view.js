@@ -236,14 +236,25 @@
         }
       }
 
+      var lastSection = null;
       for (var i = 0; i < SPEC.fields.length; i += 1) {
-        fieldsContainer.appendChild(renderFieldControl(SPEC.fields[i]));
+        var field = SPEC.fields[i];
+        if (field.section && field.section !== lastSection) {
+          var sectionTitle = document.createElement('div');
+          sectionTitle.className = 'config-view-section-title';
+          sectionTitle.textContent = field.section;
+          fieldsContainer.appendChild(sectionTitle);
+        }
+        lastSection = field.section || null;
+        fieldsContainer.appendChild(renderFieldControl(field));
       }
+      toggle.textContent = 'Configuration';
       fieldsContainer.addEventListener('change', render);
       toggle.addEventListener('click', function () {
         var expanded = toggle.getAttribute('aria-expanded') === 'true';
         toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
         body.hidden = expanded;
+        document.body.setAttribute('data-config-view-open', expanded ? 'false' : 'true');
       });
       panel.hidden = false;
       render();

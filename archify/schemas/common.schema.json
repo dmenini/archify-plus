@@ -147,6 +147,7 @@
               "id": { "type": "string", "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$" },
               "type": { "enum": ["checkbox", "select"] },
               "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+              "section": { "type": "string", "minLength": 1, "maxLength": 60 },
               "default": {},
               "options": {
                 "type": "array",
