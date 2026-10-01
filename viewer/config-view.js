@@ -119,15 +119,6 @@
       var fieldsContainer = document.getElementById('config-view-fields');
       var warningsContainer = document.getElementById('config-view-warnings');
 
-      function fieldDefaults() {
-        var values = {};
-        for (var i = 0; i < SPEC.fields.length; i += 1) {
-          var f = SPEC.fields[i];
-          values[f.id] = f.type === 'checkbox' ? !!f.default : (f.default !== undefined ? f.default : (f.options && f.options[0] && f.options[0].value));
-        }
-        return values;
-      }
-
       function renderFieldControl(field) {
         var wrap = document.createElement('div');
         wrap.className = 'config-view-field';

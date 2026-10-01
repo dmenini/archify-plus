@@ -47,6 +47,30 @@ test('an edge entry with the wrong shape (not a two-item array) is rejected', ()
   assert.ok(!isValid && architecture.errors && architecture.errors.length > 0);
 });
 
+test('a select field with no "options" key is rejected', () => {
+  const data = baseArchitecture({
+    fields: [{ id: 'mode', type: 'select', label: 'Mode' }],
+  });
+  const isValid = architecture(data);
+  assert.ok(!isValid && architecture.errors && architecture.errors.length > 0);
+});
+
+test('a select field with an empty "options" array is rejected', () => {
+  const data = baseArchitecture({
+    fields: [{ id: 'mode', type: 'select', label: 'Mode', options: [] }],
+  });
+  const isValid = architecture(data);
+  assert.ok(!isValid && architecture.errors && architecture.errors.length > 0);
+});
+
+test('"radio" is no longer a valid field type', () => {
+  const data = baseArchitecture({
+    fields: [{ id: 'mode', type: 'radio', label: 'Mode', options: [{ value: 'a', label: 'A' }] }],
+  });
+  const isValid = architecture(data);
+  assert.ok(!isValid && architecture.errors && architecture.errors.length > 0);
+});
+
 test('a diagram with no configView at all is still accepted (backward compatible)', () => {
   const data = baseArchitecture(null);
   const isValid = architecture(data);

@@ -51,3 +51,41 @@ test('validateConfigView throws on an undeclared identifier in a rule "when"', (
 test('validateConfigView passes for the well-formed SPEC', () => {
   assert.doesNotThrow(() => validateConfigView(SPEC, new Set(['alb', 'ui_task']), new Set(['alb>ui_task'])));
 });
+
+test('validateConfigView throws when a select field has options omitted entirely', () => {
+  const bad = {
+    fields: [{ id: 'mode', type: 'select', label: 'Mode' }],
+  };
+  assert.throws(
+    () => validateConfigView(bad, new Set(), new Set()),
+    /mode/
+  );
+});
+
+test('validateConfigView throws when a select field has an empty options array', () => {
+  const bad = {
+    fields: [{ id: 'mode', type: 'select', label: 'Mode', options: [] }],
+  };
+  assert.throws(
+    () => validateConfigView(bad, new Set(), new Set()),
+    /mode/
+  );
+});
+
+test('validateConfigView throws when a select field\'s default does not match any option value', () => {
+  const bad = {
+    fields: [
+      {
+        id: 'mode',
+        type: 'select',
+        label: 'Mode',
+        default: 'zzz',
+        options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }],
+      },
+    ],
+  };
+  assert.throws(
+    () => validateConfigView(bad, new Set(), new Set()),
+    /mode/
+  );
+});

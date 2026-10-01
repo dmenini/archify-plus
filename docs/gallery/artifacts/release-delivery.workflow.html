@@ -4870,6 +4870,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
     /* configView mode — reuses the existing security color and dimming idiom;
        no new hue, no new opacity value. */
+    /* No @media print override here (unlike focus/lens): configView's hide/attn state is a
+       deliberate content choice encoded in the diagram's own data, not a transient hover/selection
+       preview, so printed/PDF'd pages intentionally keep whatever state was last toggled. */
     [data-node-id][data-config-hidden],
     [data-edge-from][data-config-hidden] { opacity: 0.13; }
     [data-node-id][data-config-attn] rect:not(.c-mask) {
@@ -9330,15 +9333,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       var body = document.getElementById('config-view-body');
       var fieldsContainer = document.getElementById('config-view-fields');
       var warningsContainer = document.getElementById('config-view-warnings');
-
-      function fieldDefaults() {
-        var values = {};
-        for (var i = 0; i < SPEC.fields.length; i += 1) {
-          var f = SPEC.fields[i];
-          values[f.id] = f.type === 'checkbox' ? !!f.default : (f.default !== undefined ? f.default : (f.options && f.options[0] && f.options[0].value));
-        }
-        return values;
-      }
 
       function renderFieldControl(field) {
         var wrap = document.createElement('div');

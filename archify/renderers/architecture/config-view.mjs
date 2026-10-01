@@ -84,6 +84,22 @@ function collectReferencedIds(spec) {
 }
 
 export function validateConfigView(spec, realNodeIds, realEdgeKeys) {
+  // Catch at generation time what the schema should already reject, in case
+  // a future caller ever constructs the spec object directly rather than
+  // through JSON-schema validation.
+  for (const f of spec.fields) {
+    if (f.type !== 'select') continue;
+    if (!f.options || f.options.length === 0) {
+      throw new Error(`meta.configView field "${f.id}" has type "select" but no options`);
+    }
+    if (f.default !== undefined && !f.options.some((o) => o.value === f.default)) {
+      const validValues = f.options.map((o) => o.value).join(', ');
+      throw new Error(
+        `meta.configView field "${f.id}" has default ${JSON.stringify(f.default)} which does not match any of its options' values: ${validValues}`
+      );
+    }
+  }
+
   // Exercises every declared expression exactly like evaluateSpec would,
   // regardless of whether its branch is truthy for these defaults — this is
   // what catches an undeclared identifier at generation time rather than in

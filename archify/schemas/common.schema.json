@@ -145,7 +145,7 @@
             "required": ["id", "type", "label"],
             "properties": {
               "id": { "type": "string", "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$" },
-              "type": { "enum": ["checkbox", "radio", "select"] },
+              "type": { "enum": ["checkbox", "select"] },
               "label": { "type": "string", "minLength": 1, "maxLength": 80 },
               "default": {},
               "options": {
@@ -157,7 +157,9 @@
                   "properties": { "value": {}, "label": { "type": "string" } }
                 }
               }
-            }
+            },
+            "if": { "properties": { "type": { "const": "select" } } },
+            "then": { "required": ["options"], "properties": { "options": { "type": "array", "minItems": 1 } } }
           }
         },
         "derived": {
