@@ -4698,3 +4698,24 @@ html[data-share-playback="true"] svg[data-animation="trace"] [data-graph-role="a
   .source-evidence-beacon,
   svg [data-node-id], svg [data-edge-from], svg [data-detail], svg [data-detail-anchor], svg [data-legend-hit], svg { transition: none !important; }
 }
+
+/* configView mode — reuses the existing security color and dimming idiom;
+   no new hue, no new opacity value. */
+[data-node-id][data-config-hidden],
+[data-edge-from][data-config-hidden] { opacity: 0.13; }
+[data-node-id][data-config-attn] rect:not(.c-mask) {
+  stroke: var(--security-stroke) !important;
+  stroke-width: 3px !important;
+}
+[data-edge-from][data-config-attn] { stroke: var(--security-stroke) !important; }
+
+.config-view-panel { position: fixed; top: 12px; left: 12px; z-index: 40; }
+.config-view-toggle { cursor: pointer; }
+.config-view-body { position: absolute; top: 100%; left: 0; margin-top: 4px; }
+.config-view-warnings { list-style: none; margin: 8px 0 0; padding: 0; }
+.config-view-warnings li { display: block; margin: 4px 0; }
+.config-view-tag {
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-right: 4px;
+}
