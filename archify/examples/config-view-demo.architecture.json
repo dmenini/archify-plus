@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "configView demo",
+    "output": "examples/config-view-demo.html",
+    "configView": {
+      "fields": [
+        { "id": "monitoringEnabled", "type": "checkbox", "label": "Monitoring enabled", "default": false }
+      ],
+      "rules": [
+        { "when": "!monitoringEnabled", "hide": { "nodes": ["otel"], "edges": [["app", "otel"]] } },
+        { "when": "monitoringEnabled", "attn": { "nodes": ["otel"] } }
+      ],
+      "warnings": [
+        { "level": "info", "when": "!monitoringEnabled", "text": "Monitoring is currently off." }
+      ]
+    }
+  },
+  "components": [
+    { "id": "app", "type": "backend", "label": "App", "pos": [40, 40], "size": [160, 60] },
+    { "id": "otel", "type": "backend", "label": "OTEL Collector", "pos": [280, 40], "size": [160, 60] }
+  ],
+  "connections": [
+    { "from": "app", "to": "otel", "label": "OTLP" }
+  ]
+}
