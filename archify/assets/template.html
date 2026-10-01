@@ -4984,6 +4984,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     </div>
 
     <!-- ARCHIFY:SOURCE_EVIDENCE_DATA -->
+    <!-- ARCHIFY:CONFIG_VIEW_DATA -->
     <!-- ARCHIFY:I18N_DATA -->
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
@@ -5191,6 +5192,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <div class="node-finder-results" id="node-finder-results" role="group" aria-label="{{i18n:viewer.finder.results}}"></div>
         <p class="node-finder-empty" id="node-finder-empty" hidden>{{i18n:viewer.finder.empty}}</p>
         <p class="node-finder-status" id="node-finder-status" aria-live="polite"></p>
+      </div>
+      <div class="config-view-panel no-print" id="config-view-panel" hidden role="region" aria-label="Configuration">
+        <button type="button" class="config-view-toggle" id="config-view-toggle" aria-expanded="false"></button>
+        <div class="config-view-body" id="config-view-body" hidden>
+          <div class="config-view-fields" id="config-view-fields"></div>
+          <ul class="config-view-warnings" id="config-view-warnings"></ul>
+        </div>
       </div>
       <div class="focus-chip relationship-lens no-print" id="focus-chip" hidden role="region" aria-labelledby="relationship-lens-title">
         <div class="relationship-lens-head">
