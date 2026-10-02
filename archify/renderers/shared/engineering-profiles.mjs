@@ -4,6 +4,8 @@ const DEPLOYMENT_PROFILE = 'deployment-ownership';
 const DEPLOYMENT_BOUNDARY_KINDS = new Set(['region', 'security-group']);
 const PRIVATE_STATE_TYPES = new Set(['database']);
 
+const THREAT_MODEL_PROFILE = 'threat-model';
+
 function subject(collection, index, item = {}) {
   return {
     diagramType: 'architecture',
@@ -144,11 +146,75 @@ export function deploymentOwnershipDiagnostics(diagram) {
   return diagnostics;
 }
 
+function threatModelSubject(collection, index, item = {}) {
+  return {
+    diagramType: 'architecture',
+    profile: THREAT_MODEL_PROFILE,
+    collection,
+    index,
+    ...(item.id ? { id: item.id } : {}),
+  };
+}
+
+export function threatModelDiagnostics(diagram) {
+  const crossings = Array.isArray(diagram.crossings) ? diagram.crossings : [];
+  const componentIds = new Set((Array.isArray(diagram.components) ? diagram.components : []).map((c) => c.id));
+  const edgeKeys = new Set((Array.isArray(diagram.connections) ? diagram.connections : [])
+    .map((c) => `${c.from}>${c.to}`));
+  const diagnostics = [];
+
+  if (crossings.length === 0) {
+    diagnostics.push({
+      code: 'engineering/threat-model-no-crossings',
+      severity: 'error',
+      message: 'Threat model requires at least one entry in crossings.',
+      subject: threatModelSubject('crossings', -1),
+      evidence: { found: 0 },
+      supportedFixes: ['add one crossings entry with real membership and at least one STRIDE row'],
+    });
+  }
+
+  const seenIds = new Map();
+  crossings.forEach((crossing, index) => {
+    if (seenIds.has(crossing.id)) {
+      diagnostics.push({
+        code: 'engineering/threat-model-duplicate-id',
+        severity: 'error',
+        message: `Crossing id ${JSON.stringify(crossing.id)} is used more than once.`,
+        subject: threatModelSubject('crossings', index, crossing),
+        evidence: { duplicateOfIndex: seenIds.get(crossing.id) },
+        supportedFixes: [`set /crossings/${index}/id to a unique value`],
+      });
+    } else {
+      seenIds.set(crossing.id, index);
+    }
+
+    const nodes = crossing.members?.nodes || [];
+    const edges = crossing.members?.edges || [];
+    const unknownNodes = nodes.filter((id) => !componentIds.has(id));
+    const unknownEdges = edges.filter(([from, to]) => !edgeKeys.has(`${from}>${to}`));
+    if (unknownNodes.length || unknownEdges.length) {
+      diagnostics.push({
+        code: 'engineering/threat-model-unknown-member',
+        severity: 'error',
+        message: `Crossing ${JSON.stringify(crossing.id)} references ids not present in this diagram.`,
+        subject: threatModelSubject('crossings', index, crossing),
+        evidence: { unknownNodes, unknownEdges: unknownEdges.map(([from, to]) => `${from}>${to}`) },
+        supportedFixes: [`fix /crossings/${index}/members to reference only real component ids and real [from,to] connection pairs`],
+      });
+    }
+  });
+
+  return diagnostics;
+}
+
 export function validateEngineeringProfile(diagramType, diagram) {
   const profile = diagram.meta?.engineering_profile;
-  if (!profile) return;
-  if (diagramType !== 'architecture' || profile !== DEPLOYMENT_PROFILE) return;
-  const diagnostics = deploymentOwnershipDiagnostics(diagram);
+  if (!profile || diagramType !== 'architecture') return;
+  let diagnostics;
+  if (profile === DEPLOYMENT_PROFILE) diagnostics = deploymentOwnershipDiagnostics(diagram);
+  else if (profile === THREAT_MODEL_PROFILE) diagnostics = threatModelDiagnostics(diagram);
+  else return;
   if (!diagnostics.length) return;
   throwDiagnosticError(
     `Engineering profile ${JSON.stringify(profile)} failed:\n${diagnostics.map((entry) => `- ${entry.message}`).join('\n')}`,
