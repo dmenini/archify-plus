@@ -4991,6 +4991,99 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     [data-edge-from][data-crossing-id] {
       cursor: pointer;
     }
+
+    .threat-passport-panel {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      width: min(26rem, 92vw);
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 42;
+      border: 1px solid var(--toolbar-border);
+      border-radius: 0.5rem;
+      background: var(--toolbar-menu-bg);
+      color: var(--toolbar-text);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      padding: 0.9rem 1rem 1.2rem;
+      font-size: 0.75rem;
+    }
+    .threat-passport-panel[hidden] { display: none; }
+    .threat-passport-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+    .threat-passport-eyebrow { font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.68rem; color: var(--text-faint); }
+    .threat-passport-close { background: none; border: none; color: var(--toolbar-text); cursor: pointer; font-size: 1rem; }
+    .threat-passport-crossing { margin-bottom: 1rem; }
+    .threat-passport-row { border: 1px solid var(--toolbar-border); border-radius: 0.4rem; padding: 0.5rem 0.6rem; margin: 0.4rem 0; }
+    .threat-passport-row--high   { border-left: 3px solid var(--security-stroke); }
+    .threat-passport-row--medium { border-left: 3px solid var(--cloud-stroke); }
+    .threat-passport-row--low    { border-left: 3px solid var(--external-stroke); }
+    .threat-passport-row-head { display: flex; gap: 0.5rem; font-weight: 700; align-items: baseline; }
+    .threat-passport-rating { margin-left: auto; }
+    .threat-passport-field { margin: 0.3rem 0; line-height: 1.4; }
+    .threat-passport-factors { margin-top: 0.4rem; border-collapse: collapse; font-size: 0.68rem; }
+    .threat-passport-factors th, .threat-passport-factors td { border: 1px solid var(--toolbar-border); padding: 0.15rem 0.4rem; text-align: center; }
+    .threat-passport-tag {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      border: 1px solid var(--toolbar-border);
+      border-radius: 0.3rem;
+      padding: 0.05rem 0.3rem;
+      margin-left: 0.4rem;
+    }
+
+    .threat-risks-panel[hidden] { display: none; }
+    .threat-risks-panel { position: fixed; top: 1rem; left: 1rem; z-index: 40; }
+    .threat-risks-toggle {
+      position: relative;
+      top: 3rem;
+      z-index: 41;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.75rem;
+      border: 1px solid var(--toolbar-border);
+      border-radius: 0.5rem;
+      background: var(--toolbar-menu-bg);
+      color: var(--toolbar-text);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+    .threat-risks-toggle:hover,
+    .threat-risks-toggle:focus-visible { background: var(--toolbar-hover); }
+
+    .threat-risks-drawer[hidden] { display: none; }
+    .threat-risks-drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: min(22rem, 90vw);
+      overflow-y: auto;
+      z-index: 39;
+      border-right: 1px solid var(--toolbar-border);
+      background: var(--toolbar-menu-bg);
+      color: var(--toolbar-text);
+      box-shadow: 18px 0 48px rgba(0, 0, 0, 0.3);
+      padding: 4.5rem 1.1rem 1.5rem;
+      font-size: 0.75rem;
+    }
+
+    body[data-threat-risks-open="true"] { margin-left: min(22rem, 90vw); }
+
+    .threat-risks-item { border: 1px solid var(--toolbar-border); border-radius: 0.4rem; padding: 0.45rem 0.6rem; margin-bottom: 0.4rem; cursor: pointer; }
+    .threat-risks-item:hover, .threat-risks-item:focus-visible { background: var(--toolbar-hover); }
+    .threat-risks-top { display: flex; align-items: baseline; gap: 0.4rem; }
+    .threat-risks-rank { font-weight: 700; color: var(--text-faint); font-size: 0.68rem; }
+    .threat-risks-boundary { font-weight: 700; flex: 1; }
+    .threat-risks-rating { font-weight: 700; }
+    .threat-risks-meta {
+      margin-top: 0.2rem;
+      color: var(--text-faint);
+      font-size: 0.65rem;
+    }
   </style>
 </head>
 <body>
@@ -5483,6 +5576,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <ul class="config-view-warnings" id="config-view-warnings"></ul>
         </div>
       </div>
+      <div class="threat-risks-panel no-print" id="threat-risks-panel" hidden role="region" aria-label="Top risks">
+        <button type="button" class="threat-risks-toggle" id="threat-risks-toggle" aria-expanded="false">Top Risks</button>
+        <div class="threat-risks-drawer" id="threat-risks-drawer" hidden>
+          <div class="threat-risks-list" id="threat-risks-list"></div>
+        </div>
+      </div>
       <div class="focus-chip relationship-lens no-print" id="focus-chip" hidden role="region" aria-labelledby="relationship-lens-title">
         <div class="relationship-lens-head">
           <button class="relationship-lens-drag-handle" id="btn-focus-move" type="button" data-focus-drag-handle aria-label="Move semantic passport. Drag, use arrow keys, or press Home to reset." title="Move semantic passport. Drag, use arrow keys, or press Home to reset."></button>
@@ -5525,6 +5624,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           </div>
         </div>
         <div class="relationship-lens-list" id="relationship-lens-list" aria-label="Connected relationships"></div>
+      </div>
+      <div class="threat-passport-panel no-print" id="threat-passport-panel" hidden role="region" aria-label="Threat passport">
+        <div class="threat-passport-head">
+          <span class="threat-passport-eyebrow">Threat passport</span>
+          <button type="button" class="threat-passport-close" id="threat-passport-close" aria-label="Close threat passport">×</button>
+        </div>
+        <div class="threat-passport-body" id="threat-passport-body"></div>
       </div>
       <div class="route-probe no-print" id="route-probe" hidden role="region" aria-labelledby="route-probe-title" data-state="idle">
         <div class="route-probe-head">
@@ -9365,6 +9471,104 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     })();
 
 
+    Archify.threatPassport = (function () {
+      var dataEl = document.getElementById('archify-crossings-data');
+      var CROSSINGS = dataEl ? JSON.parse(dataEl.textContent) : [];
+
+      var panel = document.getElementById('threat-passport-panel');
+      var body = document.getElementById('threat-passport-body');
+      var closeButton = document.getElementById('threat-passport-close');
+
+      function findCrossingsByIds(crossings, idString) {
+        var ids = String(idString).trim().split(/\s+/).filter(Boolean);
+        var byId = {};
+        for (var i = 0; i < crossings.length; i += 1) byId[crossings[i].id] = crossings[i];
+        var result = [];
+        for (var j = 0; j < ids.length; j += 1) {
+          if (byId[ids[j]]) result.push(byId[ids[j]]);
+        }
+        return result;
+      }
+
+      function escHtml(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function renderFactorsTable(factors) {
+        if (!factors || Object.keys(factors).length === 0) return '';
+        var cells = Object.keys(factors).map(function (key) {
+          return '<th>' + escHtml(key.toUpperCase()) + '</th>';
+        }).join('');
+        var values = Object.keys(factors).map(function (key) {
+          return '<td>' + escHtml(factors[key]) + '</td>';
+        }).join('');
+        return '<table class="threat-passport-factors"><tr>' + cells + '</tr><tr>' + values + '</tr></table>';
+      }
+
+      function renderRow(row) {
+        var severityClass = row.severity ? ' threat-passport-row--' + row.severity : '';
+        return '' +
+          '<div class="threat-passport-row' + severityClass + '">' +
+          '<div class="threat-passport-row-head">' +
+          '<span class="threat-passport-category">' + escHtml(row.category) + '</span>' +
+          '<span class="threat-passport-status">' + escHtml(row.status) + '</span>' +
+          (row.rating !== undefined ? '<span class="threat-passport-rating">' + escHtml(row.rating) + '</span>' : '') +
+          '</div>' +
+          (row.threat ? '<p class="threat-passport-field"><strong>Threat:</strong> ' + escHtml(row.threat) + '</p>' : '') +
+          (row.vulnerability ? '<p class="threat-passport-field"><strong>Vulnerability:</strong> ' + escHtml(row.vulnerability) + '</p>' : '') +
+          (row.comment ? '<p class="threat-passport-field"><strong>Comment:</strong> ' + escHtml(row.comment) + '</p>' : '') +
+          (row.mitigation ? '<p class="threat-passport-field"><strong>Mitigation:</strong> ' + escHtml(row.mitigation) + '</p>' : '') +
+          renderFactorsTable(row.factors) +
+          '</div>';
+      }
+
+      function renderCrossing(crossing) {
+        return '' +
+          '<section class="threat-passport-crossing">' +
+          '<h3>' + escHtml(crossing.label) + '</h3>' +
+          (crossing.carried_over ? '<span class="threat-passport-tag">carried over</span>' : '') +
+          (crossing.evidence ? '<p class="threat-passport-field"><strong>Evidence:</strong> ' + escHtml(crossing.evidence) + '</p>' : '') +
+          (crossing.conditional ? '<p class="threat-passport-field"><strong>Conditional:</strong> ' + escHtml(crossing.conditional) + '</p>' : '') +
+          (crossing.rows || []).map(renderRow).join('') +
+          '</section>';
+      }
+
+      function open(ids) {
+        if (!panel || !body) return;
+        var idString = Array.isArray(ids) ? ids.join(' ') : ids;
+        var matched = findCrossingsByIds(CROSSINGS, idString);
+        if (matched.length === 0) return;
+        body.innerHTML = matched.map(renderCrossing).join('');
+        panel.hidden = false;
+        panel.setAttribute('aria-hidden', 'false');
+      }
+
+      function close() {
+        if (!panel) return;
+        panel.hidden = true;
+        panel.setAttribute('aria-hidden', 'true');
+      }
+
+      function isOpen() {
+        return !!panel && !panel.hidden;
+      }
+
+      if (closeButton) closeButton.addEventListener('click', close);
+
+      document.addEventListener('click', function (event) {
+        var target = event.target.closest && event.target.closest('[data-crossing-id]');
+        if (!target) return;
+        open(target.getAttribute('data-crossing-id'));
+      });
+
+      return { open: open, close: close, isOpen: isOpen };
+    })();
+
+
     Archify.configView = (function () {
       var JS_KEYWORDS = Object.create(null);
       JS_KEYWORDS['true'] = true;
@@ -9477,7 +9681,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
 
       var specEl = document.getElementById('archify-config-view-data');
-      if (!specEl) return { render: function () {}, active: function () { return false; }, __evaluateSpecForTests: evaluateSpec };
+      if (!specEl) return { render: function () {}, active: function () { return false; }, close: function () {}, __evaluateSpecForTests: evaluateSpec };
       var SPEC = JSON.parse(specEl.textContent);
 
       var panel = document.getElementById('config-view-panel');
@@ -9617,11 +9821,23 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       toggle.textContent = 'Configuration';
       fieldsContainer.addEventListener('change', render);
+      function close() {
+        if (toggle.getAttribute('aria-expanded') !== 'true') return;
+        toggle.setAttribute('aria-expanded', 'false');
+        body.hidden = true;
+        document.body.setAttribute('data-config-view-open', 'false');
+      }
+
       toggle.addEventListener('click', function () {
         var expanded = toggle.getAttribute('aria-expanded') === 'true';
-        toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-        body.hidden = expanded;
-        document.body.setAttribute('data-config-view-open', expanded ? 'false' : 'true');
+        if (expanded) {
+          close();
+          return;
+        }
+        if (window.Archify && window.Archify.threatRisks) window.Archify.threatRisks.close();
+        toggle.setAttribute('aria-expanded', 'true');
+        body.hidden = false;
+        document.body.setAttribute('data-config-view-open', 'true');
       });
       panel.hidden = false;
       render();
@@ -9629,8 +9845,124 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       return {
         render: render,
         active: function () { return true; },
+        close: close,
         __evaluateSpecForTests: evaluateSpec
       };
+    })();
+
+
+    Archify.threatRisks = (function () {
+      var dataEl = document.getElementById('archify-crossings-data');
+      var CROSSINGS = dataEl ? JSON.parse(dataEl.textContent) : [];
+
+      var panel = document.getElementById('threat-risks-panel');
+      var toggle = document.getElementById('threat-risks-toggle');
+      var drawer = document.getElementById('threat-risks-drawer');
+      var list = document.getElementById('threat-risks-list');
+      if (!panel || !toggle || !drawer || !list || CROSSINGS.length === 0) {
+        return { open: function () {}, close: function () {}, isOpen: function () { return false; } };
+      }
+
+      function rankRows(crossings) {
+        var flattened = [];
+        for (var i = 0; i < crossings.length; i += 1) {
+          var crossing = crossings[i];
+          var rows = crossing.rows || [];
+          for (var j = 0; j < rows.length; j += 1) {
+            var row = rows[j];
+            if (row.rating === undefined || row.rating === null) continue;
+            flattened.push({
+              crossingId: crossing.id,
+              crossingLabel: crossing.label,
+              category: row.category,
+              status: row.status,
+              severity: row.severity,
+              rating: row.rating,
+            });
+          }
+        }
+        flattened.sort(function (a, b) { return b.rating - a.rating; });
+        return flattened;
+      }
+
+      function escHtml(value) {
+        return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      function renderRow(entry, index) {
+        var div = document.createElement('div');
+        div.className = 'threat-risks-item';
+        div.setAttribute('role', 'button');
+        div.setAttribute('tabindex', '0');
+        div.innerHTML = '' +
+          '<div class="threat-risks-top">' +
+          '<span class="threat-risks-rank">#' + (index + 1) + '</span>' +
+          '<span class="threat-risks-boundary">' + escHtml(entry.crossingLabel) + '</span>' +
+          '<span class="threat-risks-rating">' + entry.rating + '</span>' +
+          '</div>' +
+          '<div class="threat-risks-meta">' + escHtml(entry.category) + ' · ' + escHtml(entry.status) + '</div>';
+        div.addEventListener('click', function () { focusCrossing(entry.crossingId); });
+        div.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            focusCrossing(entry.crossingId);
+          }
+        });
+        return div;
+      }
+
+      function focusCrossing(crossingId) {
+        var crossing = CROSSINGS.filter(function (c) { return c.id === crossingId; })[0];
+        if (!crossing) return;
+        var nodeIds = (crossing.members && crossing.members.nodes) || [];
+        var edgeIds = [];
+        var edgePairs = (crossing.members && crossing.members.edges) || [];
+        for (var i = 0; i < edgePairs.length; i += 1) {
+          edgeIds.push(edgePairs[i][0]);
+          edgeIds.push(edgePairs[i][1]);
+        }
+        var allIds = nodeIds.concat(edgeIds);
+        if (allIds.length && window.Archify && window.Archify.focus && window.Archify.focus.setMany) {
+          window.Archify.focus.setMany(allIds, { toggle: false });
+        }
+        if (allIds.length && window.Archify && window.Archify.view && window.Archify.view.reveal) {
+          window.Archify.view.reveal(allIds, { includeNeighbors: true, reason: 'threat-risks' });
+        }
+        if (window.Archify && window.Archify.threatPassport) window.Archify.threatPassport.open(crossingId);
+      }
+
+      function render() {
+        var ranked = rankRows(CROSSINGS);
+        list.innerHTML = '';
+        for (var i = 0; i < ranked.length; i += 1) list.appendChild(renderRow(ranked[i], i));
+      }
+
+      function open() {
+        if (window.Archify && window.Archify.configView) window.Archify.configView.close();
+        toggle.setAttribute('aria-expanded', 'true');
+        drawer.hidden = false;
+        document.body.setAttribute('data-threat-risks-open', 'true');
+      }
+
+      function close() {
+        if (toggle.getAttribute('aria-expanded') !== 'true') return;
+        toggle.setAttribute('aria-expanded', 'false');
+        drawer.hidden = true;
+        document.body.setAttribute('data-threat-risks-open', 'false');
+      }
+
+      function isOpen() {
+        return toggle.getAttribute('aria-expanded') === 'true';
+      }
+
+      toggle.addEventListener('click', function () {
+        if (isOpen()) close(); else open();
+      });
+
+      render();
+      panel.hidden = false;
+
+      return { open: open, close: close, isOpen: isOpen };
     })();
 
 
