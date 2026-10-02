@@ -110,7 +110,7 @@
       }
 
       var specEl = document.getElementById('archify-config-view-data');
-      if (!specEl) return { render: function () {}, active: function () { return false; }, __evaluateSpecForTests: evaluateSpec };
+      if (!specEl) return { render: function () {}, active: function () { return false; }, close: function () {}, __evaluateSpecForTests: evaluateSpec };
       var SPEC = JSON.parse(specEl.textContent);
 
       var panel = document.getElementById('config-view-panel');
