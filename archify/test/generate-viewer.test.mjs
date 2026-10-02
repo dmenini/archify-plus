@@ -77,7 +77,7 @@ test('the committed Viewer rebuilds deterministically outside the repository wor
 
 test('editing any authoritative source requires explicit regeneration', (t) => {
   const f = fixture(t);
-  for (const input of [f.shell, f.viewerCss, f.export, f.reader, f.cleanup, f.chrome, f.camera, f.radar, f.motion, f.finder, f.outline, f.intent, f.lens, f.route, f.focus, f.configView]) {
+  for (const input of [f.shell, f.viewerCss, f.export, f.reader, f.cleanup, f.chrome, f.camera, f.radar, f.motion, f.finder, f.outline, f.intent, f.lens, f.route, f.focus, f.configView, f.threatPassport, f.threatRisks]) {
     const previous = fs.readFileSync(f.output);
     fs.appendFileSync(input, '\n/* source change */\n');
     const stale = f.run('--check');
