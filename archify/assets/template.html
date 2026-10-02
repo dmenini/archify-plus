@@ -4991,6 +4991,46 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     [data-edge-from][data-crossing-id] {
       cursor: pointer;
     }
+
+    .threat-passport-panel {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      width: min(26rem, 92vw);
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 42;
+      border: 1px solid var(--toolbar-border);
+      border-radius: 0.5rem;
+      background: var(--toolbar-menu-bg);
+      color: var(--toolbar-text);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      padding: 0.9rem 1rem 1.2rem;
+      font-size: 0.75rem;
+    }
+    .threat-passport-panel[hidden] { display: none; }
+    .threat-passport-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+    .threat-passport-eyebrow { font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.68rem; color: var(--text-faint); }
+    .threat-passport-close { background: none; border: none; color: var(--toolbar-text); cursor: pointer; font-size: 1rem; }
+    .threat-passport-crossing { margin-bottom: 1rem; }
+    .threat-passport-row { border: 1px solid var(--toolbar-border); border-radius: 0.4rem; padding: 0.5rem 0.6rem; margin: 0.4rem 0; }
+    .threat-passport-row--high   { border-left: 3px solid var(--security-stroke); }
+    .threat-passport-row--medium { border-left: 3px solid var(--cloud-stroke); }
+    .threat-passport-row--low    { border-left: 3px solid var(--external-stroke); }
+    .threat-passport-row-head { display: flex; gap: 0.5rem; font-weight: 700; align-items: baseline; }
+    .threat-passport-rating { margin-left: auto; }
+    .threat-passport-field { margin: 0.3rem 0; line-height: 1.4; }
+    .threat-passport-factors { margin-top: 0.4rem; border-collapse: collapse; font-size: 0.68rem; }
+    .threat-passport-factors th, .threat-passport-factors td { border: 1px solid var(--toolbar-border); padding: 0.15rem 0.4rem; text-align: center; }
+    .threat-passport-tag {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      border: 1px solid var(--toolbar-border);
+      border-radius: 0.3rem;
+      padding: 0.05rem 0.3rem;
+      margin-left: 0.4rem;
+    }
   </style>
 </head>
 <body>
@@ -5367,6 +5407,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           </div>
         </div>
         <div class="relationship-lens-list" id="relationship-lens-list" aria-label="{{i18n:viewer.passport.relations.list}}"></div>
+      </div>
+      <div class="threat-passport-panel no-print" id="threat-passport-panel" hidden role="region" aria-label="Threat passport">
+        <div class="threat-passport-head">
+          <span class="threat-passport-eyebrow">Threat passport</span>
+          <button type="button" class="threat-passport-close" id="threat-passport-close" aria-label="Close threat passport">×</button>
+        </div>
+        <div class="threat-passport-body" id="threat-passport-body"></div>
       </div>
       <div class="route-probe no-print" id="route-probe" hidden role="region" aria-labelledby="route-probe-title" data-state="idle">
         <div class="route-probe-head">
@@ -9208,6 +9255,104 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         },
         active: function () { return activeIds.length === 0 ? null : (activeIds.length === 1 ? activeIds[0] : activeIds.slice()); }
       };
+    })();
+
+
+    Archify.threatPassport = (function () {
+      var dataEl = document.getElementById('archify-crossings-data');
+      var CROSSINGS = dataEl ? JSON.parse(dataEl.textContent) : [];
+
+      var panel = document.getElementById('threat-passport-panel');
+      var body = document.getElementById('threat-passport-body');
+      var closeButton = document.getElementById('threat-passport-close');
+
+      function findCrossingsByIds(crossings, idString) {
+        var ids = String(idString).trim().split(/\s+/).filter(Boolean);
+        var byId = {};
+        for (var i = 0; i < crossings.length; i += 1) byId[crossings[i].id] = crossings[i];
+        var result = [];
+        for (var j = 0; j < ids.length; j += 1) {
+          if (byId[ids[j]]) result.push(byId[ids[j]]);
+        }
+        return result;
+      }
+
+      function escHtml(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function renderFactorsTable(factors) {
+        if (!factors || Object.keys(factors).length === 0) return '';
+        var cells = Object.keys(factors).map(function (key) {
+          return '<th>' + escHtml(key.toUpperCase()) + '</th>';
+        }).join('');
+        var values = Object.keys(factors).map(function (key) {
+          return '<td>' + escHtml(factors[key]) + '</td>';
+        }).join('');
+        return '<table class="threat-passport-factors"><tr>' + cells + '</tr><tr>' + values + '</tr></table>';
+      }
+
+      function renderRow(row) {
+        var severityClass = row.severity ? ' threat-passport-row--' + row.severity : '';
+        return '' +
+          '<div class="threat-passport-row' + severityClass + '">' +
+          '<div class="threat-passport-row-head">' +
+          '<span class="threat-passport-category">' + escHtml(row.category) + '</span>' +
+          '<span class="threat-passport-status">' + escHtml(row.status) + '</span>' +
+          (row.rating !== undefined ? '<span class="threat-passport-rating">' + escHtml(row.rating) + '</span>' : '') +
+          '</div>' +
+          (row.threat ? '<p class="threat-passport-field"><strong>Threat:</strong> ' + escHtml(row.threat) + '</p>' : '') +
+          (row.vulnerability ? '<p class="threat-passport-field"><strong>Vulnerability:</strong> ' + escHtml(row.vulnerability) + '</p>' : '') +
+          (row.comment ? '<p class="threat-passport-field"><strong>Comment:</strong> ' + escHtml(row.comment) + '</p>' : '') +
+          (row.mitigation ? '<p class="threat-passport-field"><strong>Mitigation:</strong> ' + escHtml(row.mitigation) + '</p>' : '') +
+          renderFactorsTable(row.factors) +
+          '</div>';
+      }
+
+      function renderCrossing(crossing) {
+        return '' +
+          '<section class="threat-passport-crossing">' +
+          '<h3>' + escHtml(crossing.label) + '</h3>' +
+          (crossing.carried_over ? '<span class="threat-passport-tag">carried over</span>' : '') +
+          (crossing.evidence ? '<p class="threat-passport-field"><strong>Evidence:</strong> ' + escHtml(crossing.evidence) + '</p>' : '') +
+          (crossing.conditional ? '<p class="threat-passport-field"><strong>Conditional:</strong> ' + escHtml(crossing.conditional) + '</p>' : '') +
+          (crossing.rows || []).map(renderRow).join('') +
+          '</section>';
+      }
+
+      function open(ids) {
+        if (!panel || !body) return;
+        var idString = Array.isArray(ids) ? ids.join(' ') : ids;
+        var matched = findCrossingsByIds(CROSSINGS, idString);
+        if (matched.length === 0) return;
+        body.innerHTML = matched.map(renderCrossing).join('');
+        panel.hidden = false;
+        panel.setAttribute('aria-hidden', 'false');
+      }
+
+      function close() {
+        if (!panel) return;
+        panel.hidden = true;
+        panel.setAttribute('aria-hidden', 'true');
+      }
+
+      function isOpen() {
+        return !!panel && !panel.hidden;
+      }
+
+      if (closeButton) closeButton.addEventListener('click', close);
+
+      document.addEventListener('click', function (event) {
+        var target = event.target.closest && event.target.closest('[data-crossing-id]');
+        if (!target) return;
+        open(target.getAttribute('data-crossing-id'));
+      });
+
+      return { open: open, close: close, isOpen: isOpen };
     })();
 
 

@@ -4822,3 +4822,43 @@ body[data-config-view-open="true"] { margin-left: min(22rem, 90vw); }
 [data-edge-from][data-crossing-id] {
   cursor: pointer;
 }
+
+.threat-passport-panel {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: min(26rem, 92vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  z-index: 42;
+  border: 1px solid var(--toolbar-border);
+  border-radius: 0.5rem;
+  background: var(--toolbar-menu-bg);
+  color: var(--toolbar-text);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  padding: 0.9rem 1rem 1.2rem;
+  font-size: 0.75rem;
+}
+.threat-passport-panel[hidden] { display: none; }
+.threat-passport-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.threat-passport-eyebrow { font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.68rem; color: var(--text-faint); }
+.threat-passport-close { background: none; border: none; color: var(--toolbar-text); cursor: pointer; font-size: 1rem; }
+.threat-passport-crossing { margin-bottom: 1rem; }
+.threat-passport-row { border: 1px solid var(--toolbar-border); border-radius: 0.4rem; padding: 0.5rem 0.6rem; margin: 0.4rem 0; }
+.threat-passport-row--high   { border-left: 3px solid var(--security-stroke); }
+.threat-passport-row--medium { border-left: 3px solid var(--cloud-stroke); }
+.threat-passport-row--low    { border-left: 3px solid var(--external-stroke); }
+.threat-passport-row-head { display: flex; gap: 0.5rem; font-weight: 700; align-items: baseline; }
+.threat-passport-rating { margin-left: auto; }
+.threat-passport-field { margin: 0.3rem 0; line-height: 1.4; }
+.threat-passport-factors { margin-top: 0.4rem; border-collapse: collapse; font-size: 0.68rem; }
+.threat-passport-factors th, .threat-passport-factors td { border: 1px solid var(--toolbar-border); padding: 0.15rem 0.4rem; text-align: center; }
+.threat-passport-tag {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  border: 1px solid var(--toolbar-border);
+  border-radius: 0.3rem;
+  padding: 0.05rem 0.3rem;
+  margin-left: 0.4rem;
+}

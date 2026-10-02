@@ -545,6 +545,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </div>
         <div class="relationship-lens-list" id="relationship-lens-list" aria-label="{{i18n:viewer.passport.relations.list}}"></div>
       </div>
+      <div class="threat-passport-panel no-print" id="threat-passport-panel" hidden role="region" aria-label="Threat passport">
+        <div class="threat-passport-head">
+          <span class="threat-passport-eyebrow">Threat passport</span>
+          <button type="button" class="threat-passport-close" id="threat-passport-close" aria-label="Close threat passport">×</button>
+        </div>
+        <div class="threat-passport-body" id="threat-passport-body"></div>
+      </div>
       <div class="route-probe no-print" id="route-probe" hidden role="region" aria-labelledby="route-probe-title" data-state="idle">
         <div class="route-probe-head">
           <span class="route-probe-copy">
@@ -998,6 +1005,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     Archify.sourceEvidence.installBeacons();
 
 /* ARCHIFY:FOCUS */
+
+/* ARCHIFY:THREAT_PASSPORT */
 
 /* ARCHIFY:CONFIG_VIEW */
 
