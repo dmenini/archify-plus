@@ -38,6 +38,7 @@ const testFiles = [
   'repository-evidence.test.mjs',
   'repository-evidence-types-browser.test.mjs',
   'config-view-browser.test.mjs',
+  'threat-model-browser.test.mjs',
 ];
 
 const chrome = findChrome();

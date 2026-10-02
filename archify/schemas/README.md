@@ -241,6 +241,27 @@ unknown, leave the profile unset or obtain the fact instead of inventing it.
 `npm test` runs the generator in check mode and fails when the committed
 validators drift from their schemas.
 
+## Threat-model crossings
+
+Architecture also accepts optional top-level `crossings[]`: each entry names
+one authored trust-boundary crossing and carries a STRIDE `rows` table for it.
+`members` reuses the same `{ nodes, edges }` shape `configView` uses, so a
+crossing can name one or more connections (`edges: [[from, to], ...]`), one or
+more components (`nodes: [...]`), or both, every reference resolving to a real
+component or connection. Each row's `category` is one of the six STRIDE kinds
+(`spoofing`, `tampering`, `repudiation`, `information-disclosure`,
+`denial-of-service`, `elevation-of-privilege`); `status` is `open`,
+`mitigated`, `accepted`, `informational`, or `dash`; `severity` is `low`,
+`medium`, or `high`. `rating` and `severity` are always authored directly —
+Archify never computes a score from the row's other fields. `rows[].factors`
+is intentionally free-form: it is not a fixed column set, just a place to
+record whatever reasoning supports the authored rating. The documented
+convention, not a schema requirement, is the `av`/`wp`/`wd`/`ti`
+(attack-vector/weakness-prevalence/weakness-detectability/technical-impact)
+shape used by
+[`examples/threat-model-checkout.architecture.json`](../examples/threat-model-checkout.architecture.json);
+author a different shape when it better supports the real risk reasoning.
+
 ## Error format
 
 Schema violations exit non-zero. Each ajv error is reported on its own line as

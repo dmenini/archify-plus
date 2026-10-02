@@ -126,6 +126,21 @@ fail-closed deployment review and the source facts are known. Once enabled,
 do not remove the engineering profile merely to pass validation; repair the
 authored facts or report the diagnostics truthfully.
 
+## Threat-model profile
+
+Omit `meta.engineering_profile` unless the user explicitly asks for a
+STRIDE threat model of this architecture. When enabled, author `crossings[]`:
+each entry names a trust-boundary crossing (one or more connections, or a
+single node, via `members` — the same `{ nodes, edges }` shape `configView`
+uses) and a `rows` STRIDE table. `rows[].factors` is free-form; `av`/`wp`/`wd`/`ti`
+(attack-vector/weakness-prevalence/weakness-detectability/technical-impact)
+is the documented convention from `examples/threat-model-checkout.architecture.json`,
+not a required column set. `rating`/`severity` are always authored — Archify
+never computes them. The profile requires at least one `crossings[]` entry
+and every `members` reference to resolve to a real component or connection;
+`showcase` and `standard` both fail closed on a bad reference (unlike some
+other checks, this one has no warn-only quality-profile split).
+
 ## Title hierarchy
 
 Use one concise title and let the diagram carry the explanation. Omit
