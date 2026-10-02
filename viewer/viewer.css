@@ -4908,7 +4908,7 @@ body[data-threat-risks-open="true"] { margin-left: min(22rem, 90vw); }
 .threat-risks-item:hover, .threat-risks-item:focus-visible { background: var(--toolbar-hover); }
 .threat-risks-top { display: flex; align-items: baseline; gap: 0.4rem; }
 .threat-risks-rank { font-weight: 700; color: var(--text-faint); font-size: 0.68rem; }
-.threat-risks-boundary { font-weight: 700; flex: 1; }
+.threat-risks-category { font-weight: 700; flex: 1; }
 .threat-risks-rating { font-weight: 700; }
 .threat-risks-meta {
   margin-top: 0.2rem;

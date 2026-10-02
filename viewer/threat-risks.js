@@ -36,18 +36,30 @@
         return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       }
 
+      function categoryLabel(category) {
+        return String(category).split('-').map(function (word) {
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        }).join(' ');
+      }
+
       function renderRow(entry, index) {
         var div = document.createElement('div');
         div.className = 'threat-risks-item';
         div.setAttribute('role', 'button');
         div.setAttribute('tabindex', '0');
+        // The category is the row's bold/prominent text, not the crossing
+        // label: when several ranked rows share one crossing (the common
+        // case — most edges cross exactly one named boundary), the crossing
+        // label is identical across all of them, so making it the dominant
+        // text makes every row look the same at a glance. The STRIDE
+        // category is what actually differs row to row.
         div.innerHTML = '' +
           '<div class="threat-risks-top">' +
           '<span class="threat-risks-rank">#' + (index + 1) + '</span>' +
-          '<span class="threat-risks-boundary">' + escHtml(entry.crossingLabel) + '</span>' +
+          '<span class="threat-risks-category">' + escHtml(categoryLabel(entry.category)) + '</span>' +
           '<span class="threat-risks-rating">' + entry.rating + '</span>' +
           '</div>' +
-          '<div class="threat-risks-meta">' + escHtml(entry.category) + ' · ' + escHtml(entry.status) + '</div>';
+          '<div class="threat-risks-meta">' + escHtml(entry.crossingLabel) + ' · ' + escHtml(entry.status) + '</div>';
         div.addEventListener('click', function () { focusCrossing(entry.crossingId); });
         div.addEventListener('keydown', function (event) {
           if (event.key === 'Enter' || event.key === ' ') {

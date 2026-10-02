@@ -86,11 +86,24 @@
 
       if (closeButton) closeButton.addEventListener('click', close);
 
+      // Capture phase, deliberately: Focus's own Direct Relationship Pin
+      // feature overlays an invisible, wider hit-target clone on every edge
+      // (viewer/focus.js's relationshipHitOverlay) and calls stopPropagation()
+      // on click once it reaches that overlay during the bubble phase. A
+      // bubble-phase listener here would never fire for a real mouse click,
+      // since the browser's own hit-test — not element order in markup —
+      // decides event.target, and that overlay sits on top. A capture-phase
+      // listener runs on the way down, before Focus's bubble-phase handler
+      // gets a chance to stop propagation, so it still sees the click. The
+      // clone itself keeps data-crossing-id (Focus's own attribute-removal
+      // list only strips its own edge-identity attributes), so this still
+      // resolves correctly even when event.target is the clone, not the
+      // real edge path.
       document.addEventListener('click', function (event) {
         var target = event.target.closest && event.target.closest('[data-crossing-id]');
         if (!target) return;
         open(target.getAttribute('data-crossing-id'));
-      });
+      }, true);
 
       return { open: open, close: close, isOpen: isOpen };
     })();

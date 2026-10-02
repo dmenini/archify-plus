@@ -66,8 +66,36 @@ test('clicking a crossing-tagged edge opens the Threat Passport with the right r
       await navigate(browser, sessionId, outPath);
 
       // 1. Click a crossing-tagged edge and check the Threat Passport opens with its rows.
-      await evaluate(browser.cdp, sessionId,
-        'document.querySelector("[data-edge-from=\\"browser\\"][data-edge-to=\\"alb\\"]").dispatchEvent(new MouseEvent("click", {bubbles:true}))');
+      //
+      // Deliberately NOT `edge.dispatchEvent(new MouseEvent(...))` on the
+      // semantic edge directly: dispatchEvent fires as if the event
+      // originated at that exact node, bubbling through ITS ancestors,
+      // regardless of what a real mouse click would actually hit at those
+      // screen coordinates. Focus's own Direct Relationship Pin feature
+      // (viewer/focus.js) overlays an invisible, wider hit-target clone on
+      // top of every edge and calls stopPropagation() on click — a real
+      // click lands on that clone, not the semantic edge underneath it. An
+      // earlier version of this test used direct dispatchEvent and passed
+      // while the real interaction was broken in every actual browser
+      // session. Use elementFromPoint at the edge's own visual center to
+      // find whatever a real click would actually hit, and click that.
+      const clickedThroughRealHitTest = await evaluate(browser.cdp, sessionId, `(() => {
+        const edge = document.querySelector('[data-edge-from="browser"][data-edge-to="alb"]');
+        const rect = edge.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const target = document.elementFromPoint(cx, cy);
+        if (!target) return 'no-element-at-point';
+        target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, clientX: cx, clientY: cy }));
+        return target === edge ? 'hit-real-edge' : (target.hasAttribute('data-crossing-id') ? 'hit-overlay-with-crossing-id' : 'hit-something-else');
+      })()`);
+      assert.notEqual(clickedThroughRealHitTest, 'no-element-at-point', 'the edge should be visible and hittable at its own bounding-box center');
+      // Confirm this actually exercised the regression scenario (clicking
+      // through Focus's overlapping hit-target clone), not a coincidental
+      // hit on the real edge — otherwise this test would prove nothing
+      // about the capture-phase fix.
+      assert.equal(clickedThroughRealHitTest, 'hit-overlay-with-crossing-id',
+        `expected the real click to land on Focus's hit-target overlay (which still carries data-crossing-id), got: ${clickedThroughRealHitTest}`);
       await new Promise((resolve) => setTimeout(resolve, 100));
       const passportOpen = await evaluate(browser.cdp, sessionId,
         '!document.getElementById("threat-passport-panel").hidden');
@@ -81,6 +109,17 @@ test('clicking a crossing-tagged edge opens the Threat Passport with the right r
       await new Promise((resolve) => setTimeout(resolve, 100));
       const risksOpen = await evaluate(browser.cdp, sessionId, 'document.getElementById("threat-risks-toggle").getAttribute("aria-expanded")');
       assert.equal(risksOpen, 'true');
+      // The row's prominent text must be the per-row STRIDE category, not the
+      // crossing label — rows commonly share one crossing (the checkout
+      // fixture's TB-1 alone has multiple scored categories), and the whole
+      // point of a ranked list is to tell rows apart at a glance. Catches the
+      // regression where every row looked identical because the bold text
+      // was the (often-shared) crossing label instead.
+      const categoryTexts = await evaluate(browser.cdp, sessionId,
+        'Array.from(document.querySelectorAll(".threat-risks-category")).map((el) => el.textContent)');
+      assert.ok(categoryTexts.length >= 2, 'expected at least two ranked rows in the Top Risks drawer');
+      assert.ok(new Set(categoryTexts).size > 1,
+        `expected distinct category text across ranked rows, got: ${JSON.stringify(categoryTexts)}`);
       await evaluate(browser.cdp, sessionId, 'document.querySelector(".threat-risks-item").click()');
       await new Promise((resolve) => setTimeout(resolve, 100));
       const focusActive = await evaluate(browser.cdp, sessionId, 'document.querySelector("svg[data-focus-active]") !== null');
