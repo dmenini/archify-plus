@@ -4848,6 +4848,7 @@ body[data-config-view-open="true"] { margin-left: min(22rem, 90vw); }
 .threat-passport-row--high   { border-left: 3px solid var(--security-stroke); }
 .threat-passport-row--medium { border-left: 3px solid var(--cloud-stroke); }
 .threat-passport-row--low    { border-left: 3px solid var(--external-stroke); }
+.threat-passport-row--highlighted { outline: 2px solid var(--toolbar-text); outline-offset: 2px; background: color-mix(in srgb, var(--toolbar-text) 10%, transparent); }
 .threat-passport-row-head { display: flex; gap: 0.5rem; font-weight: 700; align-items: baseline; }
 .threat-passport-rating { margin-left: auto; }
 .threat-passport-field { margin: 0.3rem 0; line-height: 1.4; }

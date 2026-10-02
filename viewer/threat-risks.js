@@ -25,6 +25,7 @@
               status: row.status,
               severity: row.severity,
               rating: row.rating,
+              rowIndex: j,
             });
           }
         }
@@ -60,17 +61,17 @@
           '<span class="threat-risks-rating">' + entry.rating + '</span>' +
           '</div>' +
           '<div class="threat-risks-meta">' + escHtml(entry.crossingLabel) + ' · ' + escHtml(entry.status) + '</div>';
-        div.addEventListener('click', function () { focusCrossing(entry.crossingId); });
+        div.addEventListener('click', function () { focusCrossing(entry.crossingId, entry.rowIndex); });
         div.addEventListener('keydown', function (event) {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
-            focusCrossing(entry.crossingId);
+            focusCrossing(entry.crossingId, entry.rowIndex);
           }
         });
         return div;
       }
 
-      function focusCrossing(crossingId) {
+      function focusCrossing(crossingId, rowIndex) {
         var crossing = CROSSINGS.filter(function (c) { return c.id === crossingId; })[0];
         if (!crossing) return;
         var nodeIds = (crossing.members && crossing.members.nodes) || [];
@@ -87,7 +88,9 @@
         if (allIds.length && window.Archify && window.Archify.view && window.Archify.view.reveal) {
           window.Archify.view.reveal(allIds, { includeNeighbors: true, reason: 'threat-risks' });
         }
-        if (window.Archify && window.Archify.threatPassport) window.Archify.threatPassport.open(crossingId);
+        if (window.Archify && window.Archify.threatPassport) {
+          window.Archify.threatPassport.open(crossingId, { highlight: { crossingId: crossingId, rowIndex: rowIndex } });
+        }
       }
 
       function render() {

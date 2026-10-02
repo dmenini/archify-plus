@@ -125,6 +125,49 @@ test('clicking a crossing-tagged edge opens the Threat Passport with the right r
       const focusActive = await evaluate(browser.cdp, sessionId, 'document.querySelector("svg[data-focus-active]") !== null');
       assert.equal(focusActive, true, 'clicking a Top Risks row should drive Focus onto the real diagram');
 
+      // A crossing can carry several ranked rows (TB-2 in this fixture has
+      // two: Information Disclosure and Elevation Of Privilege). Clicking
+      // different rows that belong to the SAME crossing must highlight a
+      // different row inside the passport each time — otherwise every entry
+      // point into a shared crossing looks identical, which is the exact bug
+      // report this regression test exists for.
+      const firstHighlight = await evaluate(browser.cdp, sessionId, `(() => {
+        const items = Array.from(document.querySelectorAll('.threat-risks-item'));
+        const target = items.find((item) => item.textContent.includes('Information Disclosure'));
+        if (!target) return 'not-found';
+        target.click();
+        return 'clicked';
+      })()`);
+      assert.equal(firstHighlight, 'clicked', 'expected an Information Disclosure row in the Top Risks drawer');
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const firstHighlighted = await evaluate(browser.cdp, sessionId, `(() => {
+        const el = document.querySelector('.threat-passport-row--highlighted');
+        return el ? { crossing: el.closest('[data-crossing-id]').getAttribute('data-crossing-id'), rowIndex: el.getAttribute('data-row-index') } : null;
+      })()`);
+      assert.ok(firstHighlighted, 'expected a highlighted row after clicking the Information Disclosure Top Risks row');
+      assert.equal(firstHighlighted.crossing, 'TB-2');
+
+      const secondHighlight = await evaluate(browser.cdp, sessionId, `(() => {
+        // The drawer is still open from the previous click (nothing in
+        // focusCrossing closes it) — click a different row directly.
+        const items = Array.from(document.querySelectorAll('.threat-risks-item'));
+        const target = items.find((item) => item.textContent.includes('Elevation Of Privilege'));
+        if (!target) return 'not-found';
+        target.click();
+        return 'clicked';
+      })()`);
+      assert.equal(secondHighlight, 'clicked', 'expected an Elevation Of Privilege row in the Top Risks drawer');
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const secondHighlighted = await evaluate(browser.cdp, sessionId, `(() => {
+        const highlighted = document.querySelectorAll('.threat-passport-row--highlighted');
+        const el = highlighted[0];
+        return { count: highlighted.length, crossing: el ? el.closest('[data-crossing-id]').getAttribute('data-crossing-id') : null, rowIndex: el ? el.getAttribute('data-row-index') : null };
+      })()`);
+      assert.equal(secondHighlighted.count, 1, 'exactly one row should be highlighted at a time, not an accumulating set');
+      assert.equal(secondHighlighted.crossing, 'TB-2');
+      assert.notEqual(secondHighlighted.rowIndex, firstHighlighted.rowIndex,
+        'clicking a different row in the same crossing must highlight a different row, not always the same one');
+
       // 3-4. configView and Top Risks stay mutually exclusive. This needs a page
       // where configView is actually wired up (a real meta.configView), so
       // switch to the combined fixture for the rest of this test.

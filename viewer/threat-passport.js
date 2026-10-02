@@ -36,10 +36,10 @@
         return '<table class="threat-passport-factors"><tr>' + cells + '</tr><tr>' + values + '</tr></table>';
       }
 
-      function renderRow(row) {
+      function renderRow(row, index) {
         var severityClass = row.severity ? ' threat-passport-row--' + row.severity : '';
         return '' +
-          '<div class="threat-passport-row' + severityClass + '">' +
+          '<div class="threat-passport-row' + severityClass + '" data-row-index="' + index + '">' +
           '<div class="threat-passport-row-head">' +
           '<span class="threat-passport-category">' + escHtml(row.category) + '</span>' +
           '<span class="threat-passport-status">' + escHtml(row.status) + '</span>' +
@@ -55,7 +55,7 @@
 
       function renderCrossing(crossing) {
         return '' +
-          '<section class="threat-passport-crossing">' +
+          '<section class="threat-passport-crossing" data-crossing-id="' + escHtml(crossing.id) + '">' +
           '<h3>' + escHtml(crossing.label) + '</h3>' +
           (crossing.carried_over ? '<span class="threat-passport-tag">carried over</span>' : '') +
           (crossing.evidence ? '<p class="threat-passport-field"><strong>Evidence:</strong> ' + escHtml(crossing.evidence) + '</p>' : '') +
@@ -64,7 +64,36 @@
           '</section>';
       }
 
-      function open(ids) {
+      // A crossing commonly groups several STRIDE rows under one physical
+      // boundary (the whole premise of this feature: most edges cross
+      // exactly one named boundary). Opening the passport always renders
+      // every row in that crossing — that's correct, the passport is the
+      // crossing's full table — but without `highlight`, every entry point
+      // into the same crossing (any of its member edges, or any Top Risks
+      // row that belongs to it) looks identical: same content, same scroll
+      // position. `highlight: { crossingId, rowIndex }` scrolls to and marks
+      // the specific row the reader actually clicked through, so distinct
+      // entry points into a shared crossing are visibly distinguishable.
+      function applyHighlight(highlight) {
+        var previous = body.querySelector('.threat-passport-row--highlighted');
+        if (previous) previous.classList.remove('threat-passport-row--highlighted');
+        if (!highlight) {
+          body.scrollTop = 0;
+          return;
+        }
+        var section = body.querySelector('[data-crossing-id="' + highlight.crossingId + '"]');
+        var target = section && highlight.rowIndex !== undefined
+          ? section.querySelector('[data-row-index="' + highlight.rowIndex + '"]')
+          : null;
+        if (!target) {
+          body.scrollTop = 0;
+          return;
+        }
+        target.classList.add('threat-passport-row--highlighted');
+        target.scrollIntoView({ block: 'nearest' });
+      }
+
+      function open(ids, options) {
         if (!panel || !body) return;
         var idString = Array.isArray(ids) ? ids.join(' ') : ids;
         var matched = findCrossingsByIds(CROSSINGS, idString);
@@ -72,6 +101,7 @@
         body.innerHTML = matched.map(renderCrossing).join('');
         panel.hidden = false;
         panel.setAttribute('aria-hidden', 'false');
+        applyHighlight(options && options.highlight);
       }
 
       function close() {
