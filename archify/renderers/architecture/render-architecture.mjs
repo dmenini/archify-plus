@@ -13,6 +13,7 @@ import { gridLayout, resolveComponentPos, validateGridPlacement } from './grid.m
 import { createRouter } from './routing.mjs';
 import { placeAutomaticLabels, reservedLabelRect } from './labels.mjs';
 import { validateConfigView } from './config-view.mjs';
+import { resolveCrossingAttributes } from './threat-model.mjs';
 import { cleanRouteDetourProblems } from '../shared/route-quality.mjs';
 import {
   asArray,
@@ -312,6 +313,7 @@ function layoutBoundaryTitles(rawBoundaries, minimumFontSize) {
 // automatic route never borrows a frame border as its corridor), never the
 // title-expanded frames or the viewBox.
 const rawBoundaries = asArray(arch.boundaries).map(boundaryRect).filter(Boolean);
+const crossingAttrsByEdge = resolveCrossingAttributes(arch.crossings, arch.connections);
 const { pathFor, connectionSides, connectionEndpointSide } = createRouter(components, arch.connections, {
   distinctAutomaticPorts: true,
   preferReadableRoutes: true,
@@ -863,7 +865,11 @@ function renderConnectionPath(conn, index) {
     : '';
   const crossover = automaticRoute
     ? ` data-composition-crossover="halo"${conn.labelAt ? '' : ' data-composition-independent="true"'}` : '';
-  const edge = `        <path ${focusEdgeAttrs(conn.from, conn.to, conn.label, index, conn.id)} data-composition-points="${routePointsValue(routed.points)}"${crossover}${authoredStraightRouteAttrs(conn, routed.points)} d="${routed.d}" class="${cls}"${animateAttr(arch.meta, 'edge', index)} stroke-width="${strokeWidth}" marker-end="url(#${marker})"/>`;
+  const crossingAttrs = crossingAttrsByEdge.get(`${conn.from}>${conn.to}`);
+  const crossingMarkup = crossingAttrs
+    ? ` data-crossing-id="${esc(crossingAttrs.ids.join(' '))}"${crossingAttrs.severity ? ` data-crossing-severity="${esc(crossingAttrs.severity)}"` : ''}`
+    : '';
+  const edge = `        <path ${focusEdgeAttrs(conn.from, conn.to, conn.label, index, conn.id)}${crossingMarkup} data-composition-points="${routePointsValue(routed.points)}"${crossover}${authoredStraightRouteAttrs(conn, routed.points)} d="${routed.d}" class="${cls}"${animateAttr(arch.meta, 'edge', index)} stroke-width="${strokeWidth}" marker-end="url(#${marker})"/>`;
   if (!automaticRoute) return edge;
   // The wrapper is presentation-only: viewer state remains on the one semantic
   // edge, while CSS can keep its preceding mask underlay at the same opacity.
@@ -1004,5 +1010,6 @@ if (layoutJsonMode) {
     cards: arch.cards,
     sourceEvidence,
     configView: arch.meta.configView || null,
+    crossings: arch.crossings || null,
   });
 }

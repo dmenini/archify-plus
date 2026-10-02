@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveCrossingAttributes } from '../renderers/architecture/threat-model.mjs';
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const skillRoot = path.resolve(__dirname, '..');
+const cli = path.join(skillRoot, 'bin', 'archify.mjs');
 
 const connections = [
   { from: 'browser', to: 'alb' },
@@ -65,4 +74,73 @@ test('a crossing with only node members produces no edge entries', () => {
 test('no crossings and/or no connections resolves to an empty map without throwing', () => {
   assert.equal(resolveCrossingAttributes(undefined, connections).size, 0);
   assert.equal(resolveCrossingAttributes([], undefined).size, 0);
+});
+
+// Components below carry explicit pos/size. Omitting them routes through the
+// automatic grid-layout path, which throws (TypeError in labelPoint via
+// geometry.mjs) for small unpositioned component sets — a pre-existing bug
+// confirmed present before any threat-model work (reproduces at e413f97c),
+// unrelated to crossings. Authored positions sidestep it so these tests
+// exercise only the Task 4 contract: data-crossing-* attributes and the
+// crossings embed.
+test('a rendered edge carries data-crossing-id and data-crossing-severity when part of a crossing', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-threat-model-attrs-'));
+  try {
+    const candidate = {
+      schema_version: 1,
+      diagram_type: 'architecture',
+      meta: { title: 'TM', output: 'out.html' },
+      components: [
+        { id: 'browser', type: 'external', label: 'Browser', pos: [40, 40], size: [120, 60] },
+        { id: 'alb', type: 'cloud', label: 'ALB', pos: [260, 40], size: [120, 60] },
+      ],
+      connections: [{ from: 'browser', to: 'alb', label: 'HTTPS' }],
+      crossings: [{
+        id: 'TB-1',
+        label: 'Internet -> ALB',
+        members: { edges: [['browser', 'alb']] },
+        rows: [{ category: 'spoofing', status: 'open', severity: 'high' }],
+      }],
+    };
+    const input = path.join(tmp, 'tm.architecture.json');
+    const output = path.join(tmp, 'tm.html');
+    fs.writeFileSync(input, JSON.stringify(candidate));
+    const result = spawnSync(process.execPath, [cli, 'render', 'architecture', input, output], { cwd: tmp, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    const html = fs.readFileSync(output, 'utf8');
+    assert.match(html, /data-edge-from="browser" data-edge-to="alb"[^>]*data-crossing-id="TB-1" data-crossing-severity="high"/);
+    assert.ok(html.includes('archify-crossings-data'));
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('a diagram with crossings but no engineering_profile still renders severity coloring (visual-only use)', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-threat-model-visual-only-'));
+  try {
+    const candidate = {
+      schema_version: 1,
+      diagram_type: 'architecture',
+      meta: { title: 'TM', output: 'out.html' },
+      components: [
+        { id: 'browser', type: 'external', label: 'Browser', pos: [40, 40], size: [120, 60] },
+        { id: 'alb', type: 'cloud', label: 'ALB', pos: [260, 40], size: [120, 60] },
+      ],
+      connections: [{ from: 'browser', to: 'alb', label: 'HTTPS' }],
+      crossings: [{
+        id: 'TB-1',
+        label: 'Internet -> ALB',
+        members: { edges: [['browser', 'alb']] },
+        rows: [{ category: 'spoofing', status: 'open', severity: 'medium' }],
+      }],
+    };
+    const input = path.join(tmp, 'tm.architecture.json');
+    const output = path.join(tmp, 'tm.html');
+    fs.writeFileSync(input, JSON.stringify(candidate));
+    const result = spawnSync(process.execPath, [cli, 'render', 'architecture', input, output], { cwd: tmp, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(fs.readFileSync(output, 'utf8'), /data-crossing-severity="medium"/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });

@@ -4981,6 +4981,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       color: var(--text-faint);
       font-size: 0.65rem;
     }
+
+    /* Threat-model crossing severity cue — stroke color only, no badge glyph.
+       Reuses the existing security/cloud/external semantic hues; see
+       docs/superpowers/specs/2026-10-02-threat-model-diagrams-design.md §6. */
+    [data-edge-from][data-crossing-severity="high"]   { stroke: var(--security-stroke) !important; }
+    [data-edge-from][data-crossing-severity="medium"] { stroke: var(--cloud-stroke) !important; }
+    [data-edge-from][data-crossing-severity="low"]    { stroke: var(--external-stroke) !important; }
+    [data-edge-from][data-crossing-id] {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -5095,6 +5105,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <h1>Product Analytics Data Flow</h1>
       </div>
     </div>
+
 
 
 
