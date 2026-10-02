@@ -5031,6 +5031,59 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       padding: 0.05rem 0.3rem;
       margin-left: 0.4rem;
     }
+
+    .threat-risks-panel[hidden] { display: none; }
+    .threat-risks-panel { position: fixed; top: 1rem; left: 1rem; z-index: 40; }
+    .threat-risks-toggle {
+      position: relative;
+      top: 3rem;
+      z-index: 41;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.75rem;
+      border: 1px solid var(--toolbar-border);
+      border-radius: 0.5rem;
+      background: var(--toolbar-menu-bg);
+      color: var(--toolbar-text);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+    .threat-risks-toggle:hover,
+    .threat-risks-toggle:focus-visible { background: var(--toolbar-hover); }
+
+    .threat-risks-drawer[hidden] { display: none; }
+    .threat-risks-drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: min(22rem, 90vw);
+      overflow-y: auto;
+      z-index: 39;
+      border-right: 1px solid var(--toolbar-border);
+      background: var(--toolbar-menu-bg);
+      color: var(--toolbar-text);
+      box-shadow: 18px 0 48px rgba(0, 0, 0, 0.3);
+      padding: 4.5rem 1.1rem 1.5rem;
+      font-size: 0.75rem;
+    }
+
+    body[data-threat-risks-open="true"] { margin-left: min(22rem, 90vw); }
+
+    .threat-risks-item { border: 1px solid var(--toolbar-border); border-radius: 0.4rem; padding: 0.45rem 0.6rem; margin-bottom: 0.4rem; cursor: pointer; }
+    .threat-risks-item:hover, .threat-risks-item:focus-visible { background: var(--toolbar-hover); }
+    .threat-risks-top { display: flex; align-items: baseline; gap: 0.4rem; }
+    .threat-risks-rank { font-weight: 700; color: var(--text-faint); font-size: 0.68rem; }
+    .threat-risks-boundary { font-weight: 700; flex: 1; }
+    .threat-risks-rating { font-weight: 700; }
+    .threat-risks-meta {
+      margin-top: 0.2rem;
+      color: var(--text-faint);
+      font-size: 0.65rem;
+    }
   </style>
 </head>
 <body>
@@ -5363,6 +5416,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <div class="config-view-body" id="config-view-body" hidden>
           <div class="config-view-fields" id="config-view-fields"></div>
           <ul class="config-view-warnings" id="config-view-warnings"></ul>
+        </div>
+      </div>
+      <div class="threat-risks-panel no-print" id="threat-risks-panel" hidden role="region" aria-label="Top risks">
+        <button type="button" class="threat-risks-toggle" id="threat-risks-toggle" aria-expanded="false">Top Risks</button>
+        <div class="threat-risks-drawer" id="threat-risks-drawer" hidden>
+          <div class="threat-risks-list" id="threat-risks-list"></div>
         </div>
       </div>
       <div class="focus-chip relationship-lens no-print" id="focus-chip" hidden role="region" aria-labelledby="relationship-lens-title">
@@ -9608,11 +9667,23 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       toggle.textContent = 'Configuration';
       fieldsContainer.addEventListener('change', render);
+      function close() {
+        if (toggle.getAttribute('aria-expanded') !== 'true') return;
+        toggle.setAttribute('aria-expanded', 'false');
+        body.hidden = true;
+        document.body.setAttribute('data-config-view-open', 'false');
+      }
+
       toggle.addEventListener('click', function () {
         var expanded = toggle.getAttribute('aria-expanded') === 'true';
-        toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-        body.hidden = expanded;
-        document.body.setAttribute('data-config-view-open', expanded ? 'false' : 'true');
+        if (expanded) {
+          close();
+          return;
+        }
+        if (window.Archify && window.Archify.threatRisks) window.Archify.threatRisks.close();
+        toggle.setAttribute('aria-expanded', 'true');
+        body.hidden = false;
+        document.body.setAttribute('data-config-view-open', 'true');
       });
       panel.hidden = false;
       render();
@@ -9620,8 +9691,124 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       return {
         render: render,
         active: function () { return true; },
+        close: close,
         __evaluateSpecForTests: evaluateSpec
       };
+    })();
+
+
+    Archify.threatRisks = (function () {
+      var dataEl = document.getElementById('archify-crossings-data');
+      var CROSSINGS = dataEl ? JSON.parse(dataEl.textContent) : [];
+
+      var panel = document.getElementById('threat-risks-panel');
+      var toggle = document.getElementById('threat-risks-toggle');
+      var drawer = document.getElementById('threat-risks-drawer');
+      var list = document.getElementById('threat-risks-list');
+      if (!panel || !toggle || !drawer || !list || CROSSINGS.length === 0) {
+        return { open: function () {}, close: function () {}, isOpen: function () { return false; } };
+      }
+
+      function rankRows(crossings) {
+        var flattened = [];
+        for (var i = 0; i < crossings.length; i += 1) {
+          var crossing = crossings[i];
+          var rows = crossing.rows || [];
+          for (var j = 0; j < rows.length; j += 1) {
+            var row = rows[j];
+            if (row.rating === undefined || row.rating === null) continue;
+            flattened.push({
+              crossingId: crossing.id,
+              crossingLabel: crossing.label,
+              category: row.category,
+              status: row.status,
+              severity: row.severity,
+              rating: row.rating,
+            });
+          }
+        }
+        flattened.sort(function (a, b) { return b.rating - a.rating; });
+        return flattened;
+      }
+
+      function escHtml(value) {
+        return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      function renderRow(entry, index) {
+        var div = document.createElement('div');
+        div.className = 'threat-risks-item';
+        div.setAttribute('role', 'button');
+        div.setAttribute('tabindex', '0');
+        div.innerHTML = '' +
+          '<div class="threat-risks-top">' +
+          '<span class="threat-risks-rank">#' + (index + 1) + '</span>' +
+          '<span class="threat-risks-boundary">' + escHtml(entry.crossingLabel) + '</span>' +
+          '<span class="threat-risks-rating">' + entry.rating + '</span>' +
+          '</div>' +
+          '<div class="threat-risks-meta">' + escHtml(entry.category) + ' · ' + escHtml(entry.status) + '</div>';
+        div.addEventListener('click', function () { focusCrossing(entry.crossingId); });
+        div.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            focusCrossing(entry.crossingId);
+          }
+        });
+        return div;
+      }
+
+      function focusCrossing(crossingId) {
+        var crossing = CROSSINGS.filter(function (c) { return c.id === crossingId; })[0];
+        if (!crossing) return;
+        var nodeIds = (crossing.members && crossing.members.nodes) || [];
+        var edgeIds = [];
+        var edgePairs = (crossing.members && crossing.members.edges) || [];
+        for (var i = 0; i < edgePairs.length; i += 1) {
+          edgeIds.push(edgePairs[i][0]);
+          edgeIds.push(edgePairs[i][1]);
+        }
+        var allIds = nodeIds.concat(edgeIds);
+        if (allIds.length && window.Archify && window.Archify.focus && window.Archify.focus.setMany) {
+          window.Archify.focus.setMany(allIds, { toggle: false });
+        }
+        if (allIds.length && window.Archify && window.Archify.view && window.Archify.view.reveal) {
+          window.Archify.view.reveal(allIds, { includeNeighbors: true, reason: 'threat-risks' });
+        }
+        if (window.Archify && window.Archify.threatPassport) window.Archify.threatPassport.open(crossingId);
+      }
+
+      function render() {
+        var ranked = rankRows(CROSSINGS);
+        list.innerHTML = '';
+        for (var i = 0; i < ranked.length; i += 1) list.appendChild(renderRow(ranked[i], i));
+      }
+
+      function open() {
+        if (window.Archify && window.Archify.configView) window.Archify.configView.close();
+        toggle.setAttribute('aria-expanded', 'true');
+        drawer.hidden = false;
+        document.body.setAttribute('data-threat-risks-open', 'true');
+      }
+
+      function close() {
+        if (toggle.getAttribute('aria-expanded') !== 'true') return;
+        toggle.setAttribute('aria-expanded', 'false');
+        drawer.hidden = true;
+        document.body.setAttribute('data-threat-risks-open', 'false');
+      }
+
+      function isOpen() {
+        return toggle.getAttribute('aria-expanded') === 'true';
+      }
+
+      toggle.addEventListener('click', function () {
+        if (isOpen()) close(); else open();
+      });
+
+      render();
+      panel.hidden = false;
+
+      return { open: open, close: close, isOpen: isOpen };
     })();
 
 

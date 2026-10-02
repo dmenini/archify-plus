@@ -24,6 +24,7 @@ const fragments = [
   ['/* ARCHIFY:FOCUS */', 'focus.js'],
   ['/* ARCHIFY:THREAT_PASSPORT */', 'threat-passport.js'],
   ['/* ARCHIFY:CONFIG_VIEW */', 'config-view.js'],
+  ['/* ARCHIFY:THREAT_RISKS */', 'threat-risks.js'],
   ['/* ARCHIFY:INTENT_TRACE */', 'intent-trace.js'],
   ['/* ARCHIFY:SEMANTIC_LENS */', 'semantic-lens.js'],
   ['/* ARCHIFY:ROUTE_PROBE */', 'route-probe.js'],

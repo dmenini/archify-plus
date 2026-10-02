@@ -250,11 +250,23 @@
       }
       toggle.textContent = 'Configuration';
       fieldsContainer.addEventListener('change', render);
+      function close() {
+        if (toggle.getAttribute('aria-expanded') !== 'true') return;
+        toggle.setAttribute('aria-expanded', 'false');
+        body.hidden = true;
+        document.body.setAttribute('data-config-view-open', 'false');
+      }
+
       toggle.addEventListener('click', function () {
         var expanded = toggle.getAttribute('aria-expanded') === 'true';
-        toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-        body.hidden = expanded;
-        document.body.setAttribute('data-config-view-open', expanded ? 'false' : 'true');
+        if (expanded) {
+          close();
+          return;
+        }
+        if (window.Archify && window.Archify.threatRisks) window.Archify.threatRisks.close();
+        toggle.setAttribute('aria-expanded', 'true');
+        body.hidden = false;
+        document.body.setAttribute('data-config-view-open', 'true');
       });
       panel.hidden = false;
       render();
@@ -262,6 +274,7 @@
       return {
         render: render,
         active: function () { return true; },
+        close: close,
         __evaluateSpecForTests: evaluateSpec
       };
     })();
