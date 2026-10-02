@@ -21,7 +21,7 @@
         "animation": { "$ref": "common.schema.json#/$defs/animation" },
         "visual_preset": { "$ref": "common.schema.json#/$defs/visualPreset" },
         "quality_profile": { "$ref": "common.schema.json#/$defs/qualityProfile" },
-        "engineering_profile": { "enum": ["deployment-ownership"] },
+        "engineering_profile": { "enum": ["deployment-ownership", "threat-model"] },
         "repository": { "$ref": "common.schema.json#/$defs/repository" },
         "views": { "$ref": "common.schema.json#/$defs/guidedViews" },
         "configView": { "$ref": "common.schema.json#/$defs/configView" },
@@ -145,6 +145,47 @@
           "labelDy": { "type": "number" },
           "labelSegment": { "type": "integer", "minimum": 0 },
           "width": { "$ref": "common.schema.json#/$defs/relationshipWidth" }
+        }
+      }
+    },
+    "crossings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "members", "rows"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "label": { "type": "string", "minLength": 1 },
+          "members": { "$ref": "common.schema.json#/$defs/configViewIdSet" },
+          "evidence": { "type": "string" },
+          "conditional": { "type": "string" },
+          "carried_over": { "type": "boolean" },
+          "rows": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["category", "status"],
+              "properties": {
+                "category": {
+                  "enum": ["spoofing", "tampering", "repudiation", "information-disclosure", "denial-of-service", "elevation-of-privilege"]
+                },
+                "status": { "enum": ["dash", "mitigated", "accepted", "informational", "open"] },
+                "threat": { "type": "string" },
+                "vulnerability": { "type": "string" },
+                "comment": { "type": "string" },
+                "mitigation": { "type": "string" },
+                "factors": {
+                  "type": "object",
+                  "additionalProperties": { "type": "number" }
+                },
+                "rating": { "type": "number" },
+                "severity": { "enum": ["low", "medium", "high"] }
+              }
+            }
+          }
         }
       }
     },
