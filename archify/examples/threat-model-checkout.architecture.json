@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Checkout Payment Threat Model",
+    "output": "threat-model-checkout.html",
+    "engineering_profile": "threat-model"
+  },
+  "components": [
+    { "id": "browser", "type": "external", "label": "Browser", "sublabel": "end user", "pos": [40, 120], "size": [100, 60] },
+    { "id": "alb", "type": "cloud", "label": "ALB", "sublabel": "internal, TLS 1.3", "pos": [220, 120], "size": [100, 60] },
+    { "id": "payment_task", "type": "backend", "label": "Payment service", "pos": [400, 120], "size": [130, 60] },
+    { "id": "ledger_db", "type": "database", "label": "Ledger DB", "pos": [590, 120], "size": [100, 60] }
+  ],
+  "connections": [
+    { "from": "browser", "to": "alb", "label": "HTTPS POST /checkout", "labelDy": 54 },
+    { "from": "alb", "to": "payment_task", "label": "HTTP, mesh-internal", "labelDy": 54 },
+    { "from": "payment_task", "to": "ledger_db", "label": "SQL, TLS", "labelDy": 54 }
+  ],
+  "crossings": [
+    {
+      "id": "TB-1",
+      "label": "Internet -> internal ALB",
+      "members": { "edges": [["browser", "alb"]] },
+      "evidence": "ALB is scheme=\"internal\"; TLS via ssl_policy=\"TLS13_RES\"",
+      "rows": [
+        {
+          "category": "spoofing",
+          "status": "open",
+          "threat": "Credential-stuffing or token theft against the checkout login",
+          "vulnerability": "No WAF rate-based rule confirmed in front of the ALB",
+          "mitigation": "Add a WAF rate-based rule in front of the ALB",
+          "factors": { "av": 2, "wp": 1, "wd": 3, "ti": 2 },
+          "rating": 4.0,
+          "severity": "medium"
+        },
+        {
+          "category": "tampering",
+          "status": "mitigated",
+          "threat": "On-path modification of ALB-terminated traffic",
+          "vulnerability": "None confirmed - TLS 1.3 terminates here",
+          "factors": { "av": 2, "wp": 1, "wd": 1, "ti": 1 },
+          "rating": 1.33,
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "id": "TB-2",
+      "label": "ALB -> payment service",
+      "members": { "edges": [["alb", "payment_task"]] },
+      "conditional": "This hop is plaintext HTTP today - mesh mTLS covers task-to-task traffic, not this ALB-to-target-group hop",
+      "rows": [
+        {
+          "category": "information-disclosure",
+          "status": "open",
+          "threat": "Interception of bearer tokens in flight at this plaintext hop",
+          "vulnerability": "No target-group TLS certificate configured",
+          "mitigation": "Terminate TLS at the target group",
+          "factors": { "av": 1, "wp": 2, "wd": 2, "ti": 3 },
+          "rating": 5.0,
+          "severity": "high"
+        },
+        {
+          "category": "elevation-of-privilege",
+          "status": "mitigated",
+          "threat": "Lateral movement between services via the internal network",
+          "vulnerability": "Confirmed mitigation - mesh security group scopes ingress/egress to mesh members only",
+          "factors": { "av": 2, "wp": 1, "wd": 1, "ti": 2 },
+          "rating": 2.67,
+          "severity": "low"
+        }
+      ]
+    }
+  ]
+}
