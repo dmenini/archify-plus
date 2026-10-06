@@ -6,3 +6,5 @@ node_modules/
 /.impeccable/
 __pycache__/
 *.py[cod]
+.idea
+.superpowers

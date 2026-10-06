@@ -104,6 +104,22 @@ test('clicking a crossing-tagged edge opens the Threat Passport with the right r
         'document.getElementById("threat-passport-body").textContent');
       assert.ok(passportText.includes('TB-1') || passportText.includes('Internet'), 'Threat Passport should show TB-1 content');
 
+      // Closing while the close button still has real DOM focus (as it does
+      // right after a real click activates it) must not set aria-hidden on
+      // an ancestor of the focused element — Chrome's console flags exactly
+      // this as an accessibility violation ("Blocked aria-hidden on an
+      // element because its descendant retained focus"). `hidden` alone
+      // already removes the panel from the accessibility tree; an explicit
+      // aria-hidden on top of it is redundant and is specifically what
+      // triggers the warning.
+      await evaluate(browser.cdp, sessionId, 'document.getElementById("threat-passport-close").focus()');
+      await evaluate(browser.cdp, sessionId, 'document.getElementById("threat-passport-close").click()');
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const passportAriaHiddenAfterClose = await evaluate(browser.cdp, sessionId,
+        'document.getElementById("threat-passport-panel").hasAttribute("aria-hidden")');
+      assert.equal(passportAriaHiddenAfterClose, false,
+        'closing the Threat Passport must not set aria-hidden on the panel while its close button retains focus');
+
       // 2. Open the Top Risks drawer, click its top row, and check Focus + the Passport respond.
       await evaluate(browser.cdp, sessionId, 'document.getElementById("threat-risks-toggle").click()');
       await new Promise((resolve) => setTimeout(resolve, 100));

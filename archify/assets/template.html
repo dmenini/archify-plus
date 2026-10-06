@@ -9420,14 +9420,20 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (matched.length === 0) return;
         body.innerHTML = matched.map(renderCrossing).join('');
         panel.hidden = false;
-        panel.setAttribute('aria-hidden', 'false');
         applyHighlight(options && options.highlight);
       }
 
+      // `hidden` alone already removes the panel from the accessibility
+      // tree — an explicit aria-hidden on top of it is redundant, and is
+      // specifically what trips a browser's "aria-hidden on an element
+      // whose descendant retained focus" warning when the close button
+      // itself still has focus at the moment this runs (clicking a button
+      // focuses it first, then this handler fires). hidden-attribute
+      // removal from the accessibility tree isn't flagged the same way;
+      // viewer/threat-risks.js's drawer never sets aria-hidden either.
       function close() {
         if (!panel) return;
         panel.hidden = true;
-        panel.setAttribute('aria-hidden', 'true');
       }
 
       function isOpen() {
