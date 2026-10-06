@@ -44,6 +44,15 @@
 
 <p align="center"><a href="#sponsors"><strong>❤️ Partners & sponsors: Kimi Work · Supercode · OpenLux</strong></a></p>
 
+## Why this fork
+
+Archify-plus is a fork of [tt-a1i/archify](https://github.com/tt-a1i/archify) that adds two capabilities upstream doesn't have:
+
+- **Configuration-based architecture (`configView`).** One diagram reacts to deployment-specific settings (auth on/off, provider choice, memory-store choice, …) and surfaces info/warning/danger banners for the states that need attention, instead of hand-maintaining a parallel diagram per configuration.
+- **Threat model architecture (STRIDE).** A `threat-model` engineering profile adds an author-declared `crossings[]` schema, STRIDE-aware edge severity on trust-boundary crossings, and a click-to-open Threat Passport / Top Risks panel so each flagged edge opens a card with its full STRIDE findings — keeping the security analysis in the diagram instead of a separate document.
+
+Both extend the existing `architecture` diagram type additively; see [CHANGELOG.md](CHANGELOG.md) for the full history.
+
 ## See Archify in action
 
 <!-- archify-launch-video -->
