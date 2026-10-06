@@ -5017,6 +5017,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     .threat-passport-row--high   { border-left: 3px solid var(--security-stroke); }
     .threat-passport-row--medium { border-left: 3px solid var(--cloud-stroke); }
     .threat-passport-row--low    { border-left: 3px solid var(--external-stroke); }
+    .threat-passport-row--highlighted { outline: 2px solid var(--toolbar-text); outline-offset: 2px; background: color-mix(in srgb, var(--toolbar-text) 10%, transparent); }
     .threat-passport-row-head { display: flex; gap: 0.5rem; font-weight: 700; align-items: baseline; }
     .threat-passport-rating { margin-left: auto; }
     .threat-passport-field { margin: 0.3rem 0; line-height: 1.4; }
@@ -5077,7 +5078,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     .threat-risks-item:hover, .threat-risks-item:focus-visible { background: var(--toolbar-hover); }
     .threat-risks-top { display: flex; align-items: baseline; gap: 0.4rem; }
     .threat-risks-rank { font-weight: 700; color: var(--text-faint); font-size: 0.68rem; }
-    .threat-risks-boundary { font-weight: 700; flex: 1; }
+    .threat-risks-category { font-weight: 700; flex: 1; }
     .threat-risks-rating { font-weight: 700; }
     .threat-risks-meta {
       margin-top: 0.2rem;
@@ -9493,10 +9494,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         return '<table class="threat-passport-factors"><tr>' + cells + '</tr><tr>' + values + '</tr></table>';
       }
 
-      function renderRow(row) {
+      function renderRow(row, index) {
         var severityClass = row.severity ? ' threat-passport-row--' + row.severity : '';
         return '' +
-          '<div class="threat-passport-row' + severityClass + '">' +
+          '<div class="threat-passport-row' + severityClass + '" data-row-index="' + index + '">' +
           '<div class="threat-passport-row-head">' +
           '<span class="threat-passport-category">' + escHtml(row.category) + '</span>' +
           '<span class="threat-passport-status">' + escHtml(row.status) + '</span>' +
@@ -9512,7 +9513,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
       function renderCrossing(crossing) {
         return '' +
-          '<section class="threat-passport-crossing">' +
+          '<section class="threat-passport-crossing" data-crossing-id="' + escHtml(crossing.id) + '">' +
           '<h3>' + escHtml(crossing.label) + '</h3>' +
           (crossing.carried_over ? '<span class="threat-passport-tag">carried over</span>' : '') +
           (crossing.evidence ? '<p class="threat-passport-field"><strong>Evidence:</strong> ' + escHtml(crossing.evidence) + '</p>' : '') +
@@ -9521,20 +9522,56 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           '</section>';
       }
 
-      function open(ids) {
+      // A crossing commonly groups several STRIDE rows under one physical
+      // boundary (the whole premise of this feature: most edges cross
+      // exactly one named boundary). Opening the passport always renders
+      // every row in that crossing — that's correct, the passport is the
+      // crossing's full table — but without `highlight`, every entry point
+      // into the same crossing (any of its member edges, or any Top Risks
+      // row that belongs to it) looks identical: same content, same scroll
+      // position. `highlight: { crossingId, rowIndex }` scrolls to and marks
+      // the specific row the reader actually clicked through, so distinct
+      // entry points into a shared crossing are visibly distinguishable.
+      function applyHighlight(highlight) {
+        var previous = body.querySelector('.threat-passport-row--highlighted');
+        if (previous) previous.classList.remove('threat-passport-row--highlighted');
+        if (!highlight) {
+          body.scrollTop = 0;
+          return;
+        }
+        var section = body.querySelector('[data-crossing-id="' + highlight.crossingId + '"]');
+        var target = section && highlight.rowIndex !== undefined
+          ? section.querySelector('[data-row-index="' + highlight.rowIndex + '"]')
+          : null;
+        if (!target) {
+          body.scrollTop = 0;
+          return;
+        }
+        target.classList.add('threat-passport-row--highlighted');
+        target.scrollIntoView({ block: 'nearest' });
+      }
+
+      function open(ids, options) {
         if (!panel || !body) return;
         var idString = Array.isArray(ids) ? ids.join(' ') : ids;
         var matched = findCrossingsByIds(CROSSINGS, idString);
         if (matched.length === 0) return;
         body.innerHTML = matched.map(renderCrossing).join('');
         panel.hidden = false;
-        panel.setAttribute('aria-hidden', 'false');
+        applyHighlight(options && options.highlight);
       }
 
+      // `hidden` alone already removes the panel from the accessibility
+      // tree — an explicit aria-hidden on top of it is redundant, and is
+      // specifically what trips a browser's "aria-hidden on an element
+      // whose descendant retained focus" warning when the close button
+      // itself still has focus at the moment this runs (clicking a button
+      // focuses it first, then this handler fires). hidden-attribute
+      // removal from the accessibility tree isn't flagged the same way;
+      // viewer/threat-risks.js's drawer never sets aria-hidden either.
       function close() {
         if (!panel) return;
         panel.hidden = true;
-        panel.setAttribute('aria-hidden', 'true');
       }
 
       function isOpen() {
@@ -9543,11 +9580,24 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
       if (closeButton) closeButton.addEventListener('click', close);
 
+      // Capture phase, deliberately: Focus's own Direct Relationship Pin
+      // feature overlays an invisible, wider hit-target clone on every edge
+      // (viewer/focus.js's relationshipHitOverlay) and calls stopPropagation()
+      // on click once it reaches that overlay during the bubble phase. A
+      // bubble-phase listener here would never fire for a real mouse click,
+      // since the browser's own hit-test — not element order in markup —
+      // decides event.target, and that overlay sits on top. A capture-phase
+      // listener runs on the way down, before Focus's bubble-phase handler
+      // gets a chance to stop propagation, so it still sees the click. The
+      // clone itself keeps data-crossing-id (Focus's own attribute-removal
+      // list only strips its own edge-identity attributes), so this still
+      // resolves correctly even when event.target is the clone, not the
+      // real edge path.
       document.addEventListener('click', function (event) {
         var target = event.target.closest && event.target.closest('[data-crossing-id]');
         if (!target) return;
         open(target.getAttribute('data-crossing-id'));
-      });
+      }, true);
 
       return { open: open, close: close, isOpen: isOpen };
     })();
@@ -9862,6 +9912,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
               status: row.status,
               severity: row.severity,
               rating: row.rating,
+              rowIndex: j,
             });
           }
         }
@@ -9873,29 +9924,41 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       }
 
+      function categoryLabel(category) {
+        return String(category).split('-').map(function (word) {
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        }).join(' ');
+      }
+
       function renderRow(entry, index) {
         var div = document.createElement('div');
         div.className = 'threat-risks-item';
         div.setAttribute('role', 'button');
         div.setAttribute('tabindex', '0');
+        // The category is the row's bold/prominent text, not the crossing
+        // label: when several ranked rows share one crossing (the common
+        // case — most edges cross exactly one named boundary), the crossing
+        // label is identical across all of them, so making it the dominant
+        // text makes every row look the same at a glance. The STRIDE
+        // category is what actually differs row to row.
         div.innerHTML = '' +
           '<div class="threat-risks-top">' +
           '<span class="threat-risks-rank">#' + (index + 1) + '</span>' +
-          '<span class="threat-risks-boundary">' + escHtml(entry.crossingLabel) + '</span>' +
+          '<span class="threat-risks-category">' + escHtml(categoryLabel(entry.category)) + '</span>' +
           '<span class="threat-risks-rating">' + entry.rating + '</span>' +
           '</div>' +
-          '<div class="threat-risks-meta">' + escHtml(entry.category) + ' · ' + escHtml(entry.status) + '</div>';
-        div.addEventListener('click', function () { focusCrossing(entry.crossingId); });
+          '<div class="threat-risks-meta">' + escHtml(entry.crossingLabel) + ' · ' + escHtml(entry.status) + '</div>';
+        div.addEventListener('click', function () { focusCrossing(entry.crossingId, entry.rowIndex); });
         div.addEventListener('keydown', function (event) {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
-            focusCrossing(entry.crossingId);
+            focusCrossing(entry.crossingId, entry.rowIndex);
           }
         });
         return div;
       }
 
-      function focusCrossing(crossingId) {
+      function focusCrossing(crossingId, rowIndex) {
         var crossing = CROSSINGS.filter(function (c) { return c.id === crossingId; })[0];
         if (!crossing) return;
         var nodeIds = (crossing.members && crossing.members.nodes) || [];
@@ -9912,7 +9975,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (allIds.length && window.Archify && window.Archify.view && window.Archify.view.reveal) {
           window.Archify.view.reveal(allIds, { includeNeighbors: true, reason: 'threat-risks' });
         }
-        if (window.Archify && window.Archify.threatPassport) window.Archify.threatPassport.open(crossingId);
+        if (window.Archify && window.Archify.threatPassport) {
+          window.Archify.threatPassport.open(crossingId, { highlight: { crossingId: crossingId, rowIndex: rowIndex } });
+        }
       }
 
       function render() {

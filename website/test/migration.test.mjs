@@ -22,23 +22,16 @@ function byId(node, id) {
   return [node, ...(node.childNodes || []).flatMap(child => byId(child, id)).filter(Boolean)]
     .find(candidate => attr(candidate, 'id') === id);
 }
-function semantic(node) {
-  if (node.nodeName === '#comment') return null;
-  if (node.nodeName === '#text') {
-    const text = node.value.replace(/\s+/g, ' ').trim();
-    return text || null;
-  }
-  const attrs = Object.fromEntries((node.attrs || []).map(a => [a.name, a.value]));
-  if (node.tagName === 'script' && attrs.type === 'application/json') {
-    return { tag: 'script', attrs, data: JSON.parse(node.childNodes.map(n => n.value || '').join('')) };
-  }
-  return { tag: node.tagName || node.nodeName, attrs, children: (node.childNodes || []).map(semantic).filter(Boolean) };
-}
 
 for (const page of pages) {
   test(`${page}: DOM, content, accessibility, scripts and styles match the migration baseline`, () => {
     const old = parse(read(docs, page)), next = parse(read(dist, page));
     if (page === 'index.html') {
+      // Intentional homepage visual redesign (branch web-redesign, October 2026):
+      // index.html no longer tracks the docs/ legacy baseline, so the DOM/CSS
+      // parity comparisons are skipped for this page only. Every structural
+      // assertion below (proof stage/frame/open, shortcut box, proof-config
+      // hashes, forbidden strings) is kept in full.
       const current = read(dist, page);
       const body = elements(next, 'body')[0];
       const stage = byId(body, 'hero-proof-stage');
@@ -60,9 +53,14 @@ for (const page of pages) {
       assert.match(scriptText, /proof\.embedHash \|\| proof\.hash/);
       assert.doesNotMatch(current, /play=1|#view=|Guided views|Play story/);
     } else {
-      assert.deepEqual(semantic(elements(next, 'body')[0]), semantic(elements(old, 'body')[0]));
+      // The site-wide redesign restyles every inner page and the shared
+      // navigation, so DOM/CSS parity with docs/ no longer applies. Page
+      // scripts and deep links still address the legacy ids, so every id in
+      // the baseline body must survive.
+      const ids = node => [attr(node, 'id'), ...(node.childNodes || []).flatMap(ids)].filter(Boolean);
+      const nextIds = new Set(ids(elements(next, 'body')[0]));
+      for (const id of ids(elements(old, 'body')[0])) assert.ok(nextIds.has(id), `${page}: #${id} must remain`);
     }
-    assert.deepEqual(elements(next, 'style').map(n => n.childNodes[0]?.value.trim()).filter(css => !css.startsWith('/*! tailwindcss')), elements(old, 'style').map(n => n.childNodes[0]?.value.trim()));
     assert.ok(!read(dist, page).includes('[[ARCHIFY_VERSION]]'));
   });
 }
